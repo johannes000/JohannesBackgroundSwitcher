@@ -5,13 +5,22 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE)
+# set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE)
 
 message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 # Abhängigkeiten
 include(cmake/CPM.cmake)
 include(cmake/warnings.cmake)
+
+CPMAddPackage(
+  NAME SDL
+  GITHUB_REPOSITORY libsdl-org/SDL
+  GIT_TAG release-3.2.8
+  OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF"
+)
+
+
 
 CPMAddPackage(
   NAME spdlog
@@ -40,13 +49,14 @@ add_library(imgui STATIC
   ${imgui_SOURCE_DIR}/imgui_draw.cpp
   ${imgui_SOURCE_DIR}/imgui_widgets.cpp
   ${imgui_SOURCE_DIR}/imgui_tables.cpp
+  ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
   ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-  ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp 
 )
 
 include_directories(imgui INTERFACE
   ${imgui_SOURCE_DIR}
   ${imgui_SOURCE_DIR}/backends
+  ${SDL_SOURCE_DIR}/include
 )
 
 target_compile_definitions(imgui PUBLIC -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS) # optional imgui setting
@@ -61,14 +71,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 
 # Alle .cpp- und .hpp-Dateien rekursiv suchen
 file(GLOB_RECURSE CORE_SOURCES
-    "${PROJECT_SOURCE_DIR}/src/core/*.cpp"
-    "${PROJECT_SOURCE_DIR}/src/core/*.hpp"
+    "${PROJECT_SOURCE_DIR}/src/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/*.hpp"
 )
 
-file(GLOB_RECURSE PLATFORM_SOURCES
-    "${PROJECT_SOURCE_DIR}/src/win64/*.cpp"
-    "${PROJECT_SOURCE_DIR}/src/win64/*.hpp"
-)
 
 # Executable erstellen
 add_executable(${PROJECT_NAME} ${PLATFORM_SOURCES} ${CORE_SOURCES})
@@ -80,15 +86,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 # Link-Bibliotheken
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    spdlog::spdlog
     imgui
     opengl32
-    gdi32
-    dwmapi
-    user32
+    SDL3::SDL3
+    spdlog::spdlog
 )
-target_compile_definitions(${PROJECT_NAME} PRIVATE UNICODE _UNICODE)
-target_link_options(${PROJECT_NAME} PRIVATE -static -static-libgcc -static-libstdc++)
+# target_link_options(${PROJECT_NAME} PRIVATE -static -static-libgcc -static-libstdc++)
 
 # # Assets kopieren
 # set(SOURCE_ASSETS_DIR ${CMAKE_SOURCE_DIR})
@@ -105,3 +108,14 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:-g -O0>
     $<$<CONFIG:Release>:-O3>
 )
+
+if(SDL_ADDED)
+  if(WIN32 AND SDL_SHARED)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${SDL_BINARY_DIR}/SDL3.dll"
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+      COMMENT "Copying SDL3.dll to output directory"
+    )
+  endif()
+endif()

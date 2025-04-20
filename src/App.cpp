@@ -48,7 +48,7 @@ auto App::Init() -> void {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 	Uint32 window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN;
-	mWindow = SDL_CreateWindow("Dear ImGui SDL3+OpenGL3 example", 1280, 720, window_flags);
+	mWindow = SDL_CreateWindow("Johannes Background Switcher", 1280, 720, window_flags);
 	if (mWindow == nullptr) {
 		throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
 	}
@@ -126,7 +126,8 @@ auto App::HandleEvents() -> void {
 	}
 }
 
-auto App::Update() -> void { // [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your SDL_AppIterate() function]
+auto App::Update() -> void {
+	// [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your SDL_AppIterate() function]
 	if (SDL_GetWindowFlags(mWindow) & SDL_WINDOW_MINIMIZED) {
 		SDL_Delay(10);
 		return;
@@ -134,13 +135,45 @@ auto App::Update() -> void { // [If using SDL_MAIN_USE_CALLBACKS: all code below
 }
 
 auto App::Render() -> void {
+	NewFrame();
+	RenderDemoWindows();
+	EndFrame();
+}
+
+auto App::EndFrame() -> void {
 	ImGuiIO &io = ImGui::GetIO();
 	(void)io;
+	// Rendering
+	ImGui::Render();
+	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+	glClear(GL_COLOR_BUFFER_BIT);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+	// Update and Render additional Platform Windows
+	// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
+	//  For this specific demo app we could also call SDL_GL_MakeCurrent(window, mGLContext) directly)
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		SDL_Window *backup_current_window = SDL_GL_GetCurrentWindow();
+		SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+		SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+	}
+
+	SDL_GL_SwapWindow(mWindow);
+}
+
+auto App::NewFrame() -> void {
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL3_NewFrame();
 	ImGui::NewFrame();
+}
+
+auto App::RenderDemoWindows() -> void {
+	ImGuiIO &io = ImGui::GetIO();
+	(void)io;
 
 	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
 	if (show_demo_window)
@@ -177,25 +210,6 @@ auto App::Render() -> void {
 			show_another_window = false;
 		ImGui::End();
 	}
-	// Rendering
-	ImGui::Render();
-	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-	glClear(GL_COLOR_BUFFER_BIT);
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-	// Update and Render additional Platform Windows
-	// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-	//  For this specific demo app we could also call SDL_GL_MakeCurrent(window, mGLContext) directly)
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-		SDL_Window *backup_current_window = SDL_GL_GetCurrentWindow();
-		SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
-		SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
-	}
-
-	SDL_GL_SwapWindow(mWindow);
 }
 
 auto App::Shutdown() -> void {

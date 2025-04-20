@@ -33,10 +33,14 @@ private:
 	auto HandleEvents() -> void;
 	auto Update() -> void;
 	auto Render() -> void;
+	auto EndFrame() -> void;
+	auto RenderDemoWindows() -> void;
+	auto NewFrame() -> void;
 
 private:
 	SDL_Window *mWindow;
 	SDL_GLContext mGLContext;
+	ImGuiIO mImGuiIO;
 
 	LogPtr log = AddLogger("APP");
 	bool mRunning{true};

@@ -12,6 +12,7 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
+class App;
 class GUI {
 public:
 	GUI() {};
@@ -21,7 +22,7 @@ public:
 	GUI &operator=(GUI &&) = delete;
 	GUI &operator=(const GUI &) = delete;
 
-	auto Init() -> void;
+	auto Init(App *app) -> void;
 	auto Shutdown() -> void;
 	auto HandleEvents() -> void;
 	auto Update() -> void;
@@ -35,6 +36,7 @@ private:
 	auto EndFrame() -> void;
 
 	auto RenderDemoWindows() -> void;
+	auto RenderFolderPanel() -> void;
 
 	auto InitRenderer() -> void;
 
@@ -42,6 +44,8 @@ private:
 	SDL_Window *mWindow;
 	SDL_GLContext mGLContext;
 	ImGuiIO mImGuiIO;
+
+	App *mApp;
 
 	LogPtr log = AddLogger("GUI");
 };

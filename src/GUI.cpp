@@ -1,14 +1,13 @@
 #include "App.hpp"
+#include "GUI.hpp"
 
 namespace {
 bool show_demo_window = true;
 bool show_another_window = false;
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-} // namespace
 
-auto GUI::Init() -> void {
-	InitRenderer();
-}
+constexpr f32 FOLDERPANEL_SIZE_FAKTOR = 1.f / 3.f;
+} // namespace
 
 auto GUI::HandleEvents() -> void {
 }
@@ -18,9 +17,36 @@ auto GUI::Update() -> void {
 
 auto GUI::Render() -> void {
 	// [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your SDL_AppIterate() function]
-
 	NewFrame();
+
+	ImGuiViewport *viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->Pos);
+	ImGui::SetNextWindowSize(viewport->Size);
+	ImGui::SetNextWindowViewport(viewport->ID);
+
+	ImGuiWindowFlags windowFlags =
+		ImGuiWindowFlags_NoDocking |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoBringToFrontOnFocus |
+		ImGuiWindowFlags_NoNavFocus |
+		ImGuiWindowFlags_NoBackground;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+	ImGui::Begin("Main Window", nullptr, windowFlags);
+	ImGui::PopStyleVar();
+
+	f32 folderPanelWidth = viewport->Size.x * FOLDERPANEL_SIZE_FAKTOR;
+	ImGui::BeginChild("Sidebar", ImVec2(folderPanelWidth, 0), true,
+					  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+	RenderFolderPanel();
+	ImGui::EndChild();
+
 	RenderDemoWindows();
+
+	ImGui::End();
 	EndFrame();
 }
 
@@ -93,6 +119,15 @@ auto GUI::RenderDemoWindows() -> void {
 		if (ImGui::Button("Close Me"))
 			show_another_window = false;
 		ImGui::End();
+	}
+}
+
+auto GUI::RenderFolderPanel() -> void {
+	ImGuiViewport *viewport = ImGui::GetMainViewport();
+	f32 panelWidth = viewport->Size.x * FOLDERPANEL_SIZE_FAKTOR;
+	f32 buttonWidth = panelWidth - ImGui::GetStyle().WindowPadding.x * 2;
+
+	if (ImGui::Button("+", ImVec2(buttonWidth, 0))) {
 	}
 }
 
@@ -195,6 +230,16 @@ auto GUI::InitRenderer() -> void {
 	// io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
 	// ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
 	// IM_ASSERT(font != nullptr);
+
+	style.WindowRounding = 0.0f;
+	style.ChildRounding = 5.0f;
+	style.FrameRounding = 3.0f;
+	style.GrabRounding = 3.0f;
+	style.TabRounding = 3.0f;
+
+	ImVec4 *colors = style.Colors;
+	colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
+	colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
 }
 
 auto GUI::Shutdown() -> void {
@@ -205,4 +250,9 @@ auto GUI::Shutdown() -> void {
 	SDL_GL_DestroyContext(mGLContext);
 	SDL_DestroyWindow(mWindow);
 	SDL_Quit();
+}
+
+auto GUI::Init(App *app) -> void {
+	mApp = app;
+	InitRenderer();
 }

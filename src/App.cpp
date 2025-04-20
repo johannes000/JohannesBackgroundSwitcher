@@ -32,6 +32,6 @@ auto App::Shutdown() -> void {
 }
 
 auto App::Init() -> void {
-	mGUI.Init();
+	mGUI.Init(this);
 	mRunning = true;
 }

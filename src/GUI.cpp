@@ -1,5 +1,6 @@
-#include "App.hpp"
 #include "GUI.hpp"
+
+#include "App.hpp"
 
 namespace {
 bool show_demo_window = true;
@@ -122,12 +123,39 @@ auto GUI::RenderDemoWindows() -> void {
 	}
 }
 
+auto RenderFolderPathText(const WallpaperFolder &folder) -> void {
+	std::string indent;
+	if (folder.depth > 0) {
+		for (int i = 0; i < folder.depth; ++i) {
+			indent += "    ";
+		}
+		indent += "-> ";
+	}
+
+	ImGui::Text("%s%s", indent.c_str(), folder.path.filename().string().c_str());
+	for (const auto &pic : folder.picturePaths) {
+		ImGui::Text("  %s%s", indent.c_str(), pic.filename().string().c_str());
+	}
+
+	for (const auto &child : folder.childFolders) {
+		RenderFolderPathText(child);
+	}
+}
+
 auto GUI::RenderFolderPanel() -> void {
 	ImGuiViewport *viewport = ImGui::GetMainViewport();
 	f32 panelWidth = viewport->Size.x * FOLDERPANEL_SIZE_FAKTOR;
-	f32 buttonWidth = panelWidth - ImGui::GetStyle().WindowPadding.x * 2;
 
+	for (const auto &folder : mApp->GetWallpaperFolders()) {
+		RenderFolderPathText(folder);
+	}
+	ImGui::Separator();
+
+	f32 buttonWidth = panelWidth - ImGui::GetStyle().WindowPadding.x * 2;
 	if (ImGui::Button("+", ImVec2(buttonWidth, 0))) {
+		mApp->AddWallpaperFolder("C:\\Users\\knaub\\source\\repos\\JohannesBackgroundSwitcher\\testpaths");
+		mApp->AddWallpaperFolder("C:\\Users\\knaub\\source\\repos\\JohannesBackgroundSwitcher\\testpaths\\Anime");
+		mApp->AddWallpaperFolder("C:\\Users\\knaub\\source\\repos\\JohannesBackgroundSwitcher\\testpaths\\Fake");
 	}
 }
 

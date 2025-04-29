@@ -2,6 +2,8 @@
 #include "utility/Includes.hpp"
 #include "GUI.hpp"
 
+#include <random>
+
 struct WallpaperFolder {
 	fs::path path;
 	bool selected{true};
@@ -24,17 +26,22 @@ public:
 	auto RemoveWallpaperFolder(const fs::path path) -> void;
 	auto GetWallpaperFolders() const -> const std::vector<WallpaperFolder> & { return mWallpaperFolders; };
 
-	auto GetRandomWallpaper() const -> fs::path;
-	auto GetRandomWallpaper(fs::path path) const -> fs::path;
+	auto GetRandomWallpaper() -> fs::path;
 
 private:
 	auto Update() -> void;
 	auto HandleEvents() -> void;
+	auto HandleCounts(const fs::path &path) -> void;
+
+	auto SelectWeightedEntry(const fs::path &path) -> fs::path;
+	auto RecursiveSelectEntry(const fs::path &current) -> fs::path;
 
 	auto FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path path) -> bool;
 
 private:
 	GUI mGUI;
+
+	std::mt19937 mGen;
 
 	std::vector<WallpaperFolder> mWallpaperFolders;
 	std::map<fs::path, i32> mPathUseCount;

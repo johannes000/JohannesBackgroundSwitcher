@@ -96,7 +96,7 @@ typedef MapSerializer<fs::path, i32> PathMapSerializer;
 class PathMapSerializer {
 public:
 	static void Serialize(const std::map<fs::path, i32> &map, const fs::path &filepath) {
-		std::ofstream ofs(filepath, std::ios::binary);
+		std::ofstream ofs(filepath, std::ios::binary | std::ios::trunc);
 		if (!ofs) {
 			throw std::runtime_error("Kann die Datei nicht öffnen: " + filepath.string());
 		}
@@ -117,7 +117,7 @@ public:
 	static std::map<fs::path, i32> Deserialize(const fs::path &filepath) {
 		std::ifstream ifs(filepath, std::ios::binary);
 		if (!ifs) {
-			throw std::runtime_error("Kann die Datei nicht öffnen: " + filepath.string());
+			return std::map<fs::path, i32>();
 		}
 
 		std::map<fs::path, i32> result;

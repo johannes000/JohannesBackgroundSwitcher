@@ -18,3 +18,4 @@ typedef double f64;
 #define global static
 
 global const char *APP_NAME = "Wallpapers";
+global const char *USE_COUNT_FILE = "usecount.dat";

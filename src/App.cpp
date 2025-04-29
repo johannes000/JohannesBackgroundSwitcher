@@ -1,8 +1,6 @@
 #include "App.hpp"
 #include "utility\MapSerializer.hpp"
 
-#include <random>
-
 auto App::HandleEvents() -> void {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
@@ -12,6 +10,54 @@ auto App::HandleEvents() -> void {
 		if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(mGUI.GetWindow()))
 			mRunning = false;
 	}
+}
+
+auto App::HandleCounts(const fs::path &path) -> void {
+	auto &count = mPathUseCount[path];
+	if (++count > 6)
+		count = 0;
+}
+
+auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
+	std::vector<fs::path> candidates;
+	std::vector<f64> weights;
+
+	for (const auto &entry : fs::directory_iterator(path)) {
+		const auto &entryPath = entry.path();
+		if (Util::IsImageFile(entryPath)) {
+			candidates.push_back(entryPath);
+			weights.push_back(1.f);
+		} else if (entry.is_directory()) {
+			i32 count = mPathUseCount.contains(entryPath) ? mPathUseCount[entryPath] : 0;
+			candidates.push_back(entryPath);
+			weights.push_back(std::pow(.5f, count));
+		}
+	}
+	if (candidates.empty())
+		return {};
+
+	std::discrete_distribution<> distr(weights.begin(), weights.end());
+	return candidates[distr(mGen)];
+}
+
+auto App::RecursiveSelectEntry(const fs::path &current) -> fs::path {
+	log->trace("Durchsuche {}", current.string());
+
+	if (!fs::exists(current))
+		return {};
+	if (Util::IsImageFile(current))
+		return current;
+	if (!fs::is_directory(current))
+		return {};
+	else
+		HandleCounts(current);
+
+	auto selected = SelectWeightedEntry(current);
+	if (selected.empty()) {
+		log->warn("Leerer ordner: {}", current.string());
+		return {};
+	}
+	return RecursiveSelectEntry(selected);
 }
 
 auto App::FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path path) -> bool {
@@ -41,6 +87,7 @@ auto App::Run() -> void {
 
 auto App::Shutdown() -> void {
 	mGUI.Shutdown();
+	PathMapSerializer::Serialize(mPathUseCount, USE_COUNT_FILE);
 	FreeImage_DeInitialise();
 }
 
@@ -67,44 +114,46 @@ auto App::AddWallpaperFolder(const fs::path path) -> void {
 auto App::RemoveWallpaperFolder(const fs::path /* path */) -> void {
 }
 
-auto App::GetRandomWallpaper() const -> fs::path {
+auto App::GetRandomWallpaper() -> fs::path {
 	if (mWallpaperFolders.empty()) {
 		log->warn("Keine Ordner im System");
 		return "";
 	}
-	std::vector<WallpaperFolder> eligible;
+	std::vector<fs::path> eligible;
 	for (const auto &wf : mWallpaperFolders) {
-		if (wf.selected)
-			eligible.push_back(wf);
-	}
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<size_t> folderDist(0, eligible.size() - 1);
-	return GetRandomWallpaper(eligible.at(folderDist(gen)).path);
-}
-
-auto App::GetRandomWallpaper(fs::path path) const -> fs::path {
-	std::vector<fs::path> images;
-	for (const auto &pic : fs::directory_iterator(path)) {
-		if (Util::IsImageFile(pic.path())) {
-			images.push_back(pic.path());
+		if (wf.selected) {
+			eligible.push_back(wf.path);
 		}
 	}
-	log->info("{}", path.filename().string());
 
-	for (auto const &i : images) {
-		log->info("{}", i.filename().string());
+	if (eligible.empty()) {
+		log->warn("Keine Ordner Ausgewählt");
+		return "";
 	}
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<size_t> picsDist(0, images.size() - 1);
-	auto rr = images[picsDist(gen)];
-	log->info("Bild Ausgewählt {}", rr.string());
-	return rr;
+
+	std::vector<f64> weights;
+	for (const auto &path : eligible) {
+		i32 count = mPathUseCount.contains(path) ? mPathUseCount[path] : 0;
+		weights.push_back(std::pow(0.5, count));
+	}
+
+	std::discrete_distribution<> firstDist(weights.begin(), weights.end());
+
+	while (true) {
+		fs::path base = eligible[firstDist(mGen)];
+		log->trace("Top lvl Auswahl: {}", base.string());
+
+		fs::path result = RecursiveSelectEntry(base);
+		if (!result.empty())
+			return result;
+	}
+	return "C:/Wallpaper/1.webp";
 }
 
 auto App::Init() -> void {
 	mGUI.Init(this);
 	FreeImage_Initialise();
 	mRunning = true;
+	mPathUseCount = PathMapSerializer::Deserialize(USE_COUNT_FILE);
+	mGen = std::mt19937(std::random_device{}());
 }

@@ -37,6 +37,7 @@ private:
 	GUI mGUI;
 
 	std::vector<WallpaperFolder> mWallpaperFolders;
+	std::map<fs::path, i32> mPathUseCount;
 
 	LogPtr log = AddLogger("APP");
 	bool mRunning{true};

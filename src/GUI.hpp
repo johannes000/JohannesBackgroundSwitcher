@@ -54,7 +54,7 @@ private:
 	ImGuiIO mImGuiIO;
 	TextureData mCurrentWallpaper;
 
-	App *mApp;
+		App *mApp;
 
 	LogPtr log = AddLogger("GUI");
 };

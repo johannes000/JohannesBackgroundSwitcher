@@ -24,7 +24,8 @@ public:
 
 	auto AddWallpaperFolder(const fs::path path) -> void;
 	auto RemoveWallpaperFolder(const fs::path path) -> void;
-	auto GetWallpaperFolders() const -> const std::vector<WallpaperFolder> & { return mWallpaperFolders; };
+	auto GetWallpaperFolders() const -> const auto & { return mWallpaperFolders; };
+	auto GetPathCount() const -> const auto & { return mPathUseCount; };
 
 	auto GetRandomWallpaper() -> fs::path;
 

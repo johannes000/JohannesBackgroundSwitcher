@@ -95,7 +95,7 @@ auto GUI::Render() -> void {
 	ImGui::PopStyleColor();
 	ImGui::PopStyleVar();
 
-	RenderDemoWindows(); // Falls noch benötigt
+	// RenderDemoWindows(); // Falls noch benötigt
 
 	ImGui::End();
 	EndFrame();
@@ -122,10 +122,12 @@ auto GUI::RenderFolderPanel() -> void {
 	for (const auto &folder : mApp->GetWallpaperFolders()) {
 		RenderFolderPathText(folder);
 	}
+	for (const auto &[path, count] : mApp->GetPathCount()) {
+		ImGui::Text("%s\t %d", path.string().c_str(), count);
+	}
 	ImGui::EndChild();
 
 	if (ImGui::Button("+", ImVec2(buttonWidth, 0))) {
-		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test");
 		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\1");
 		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\2");
 		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\3");

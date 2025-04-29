@@ -93,8 +93,7 @@ private:
 typedef MapSerializer<fs::path, i32> PathMapSerializer;
 #else
 
-class PathMapSerializer {
-public:
+struct PathMapSerializer {
 	static void Serialize(const std::map<fs::path, i32> &map, const fs::path &filepath) {
 		std::ofstream ofs(filepath, std::ios::binary | std::ios::trunc);
 		if (!ofs) {
@@ -140,5 +139,4 @@ public:
 		return result;
 	}
 };
-
 #endif

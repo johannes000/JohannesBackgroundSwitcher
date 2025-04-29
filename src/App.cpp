@@ -1,5 +1,5 @@
 #include "App.hpp"
-#include "utility\MapSerializer.hpp"
+#include "utility\Serializer.hpp"
 
 auto App::HandleEvents() -> void {
 	SDL_Event event;
@@ -14,7 +14,7 @@ auto App::HandleEvents() -> void {
 
 auto App::HandleCounts(const fs::path &path) -> void {
 	auto &count = mPathUseCount[path];
-	if (++count > 6)
+	if (++count > 3)
 		count = 0;
 }
 
@@ -30,11 +30,13 @@ auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
 		} else if (entry.is_directory()) {
 			i32 count = mPathUseCount.contains(entryPath) ? mPathUseCount[entryPath] : 0;
 			candidates.push_back(entryPath);
-			weights.push_back(std::pow(.5f, count));
+			weights.push_back(std::pow(.7f, count));
 		}
 	}
 	if (candidates.empty())
 		return {};
+	if (candidates.size() == 1)
+		return candidates[0];
 
 	std::discrete_distribution<> distr(weights.begin(), weights.end());
 	return candidates[distr(mGen)];
@@ -46,6 +48,7 @@ auto App::RecursiveSelectEntry(const fs::path &current) -> fs::path {
 	if (!fs::exists(current))
 		return {};
 	if (Util::IsImageFile(current))
+		// TODO: Blacklist
 		return current;
 	if (!fs::is_directory(current))
 		return {};
@@ -134,7 +137,7 @@ auto App::GetRandomWallpaper() -> fs::path {
 	std::vector<f64> weights;
 	for (const auto &path : eligible) {
 		i32 count = mPathUseCount.contains(path) ? mPathUseCount[path] : 0;
-		weights.push_back(std::pow(0.5, count));
+		weights.push_back(std::pow(.7f, count));
 	}
 
 	std::discrete_distribution<> firstDist(weights.begin(), weights.end());

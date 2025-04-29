@@ -16,3 +16,5 @@ typedef float f32;
 typedef double f64;
 
 #define global static
+
+global const char *APP_NAME = "Wallpapers";

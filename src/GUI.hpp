@@ -1,5 +1,6 @@
 #pragma once
 #include "utility\Includes.hpp"
+#include "FreeImage.h"
 
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
@@ -11,8 +12,14 @@
 #else
 #include <SDL3/SDL_opengl.h>
 #endif
-
 class App;
+
+struct TextureData {
+	GLuint texture{0};
+	i32 width{0};
+	i32 height{0};
+};
+
 class GUI {
 public:
 	GUI() {};
@@ -32,18 +39,20 @@ public:
 	auto GetGLContext() -> SDL_GLContext * { return &mGLContext; }
 
 private:
+	auto InitRenderer() -> void;
 	auto NewFrame() -> void;
 	auto EndFrame() -> void;
 
 	auto RenderDemoWindows() -> void;
 	auto RenderFolderPanel() -> void;
 
-	auto InitRenderer() -> void;
+	auto LoadFreeImageAsTexture(FIBITMAP *bitmap, i32 &width, i32 &height) -> GLuint;
 
 private:
 	SDL_Window *mWindow;
 	SDL_GLContext mGLContext;
 	ImGuiIO mImGuiIO;
+	TextureData mCurrentWallpaper;
 
 	App *mApp;
 

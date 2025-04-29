@@ -3,7 +3,7 @@
 #include "App.hpp"
 
 namespace {
-bool show_demo_window = true;
+bool show_demo_window = false;
 bool show_another_window = false;
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -17,7 +17,6 @@ auto GUI::Update() -> void {
 }
 
 auto GUI::Render() -> void {
-	// [If using SDL_MAIN_USE_CALLBACKS: all code below would likely be your SDL_AppIterate() function]
 	NewFrame();
 
 	ImGuiViewport *viewport = ImGui::GetMainViewport();
@@ -39,123 +38,102 @@ auto GUI::Render() -> void {
 	ImGui::Begin("Main Window", nullptr, windowFlags);
 	ImGui::PopStyleVar();
 
-	f32 folderPanelWidth = viewport->Size.x * FOLDERPANEL_SIZE_FAKTOR;
-	ImGui::BeginChild("Sidebar", ImVec2(folderPanelWidth, 0), true,
-					  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
-	RenderFolderPanel();
-	ImGui::EndChild();
+	// Styling für beide Child-Fenster
+	const ImGuiWindowFlags childFlags =
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoResize;
 
-	RenderDemoWindows();
+	// Linke Seitenleiste (Folder Panel)
+	f32 folderPanelWidth = viewport->Size.x * FOLDERPANEL_SIZE_FAKTOR;
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
+	ImGui::BeginChild("Sidebar", ImVec2(folderPanelWidth, 0), true, childFlags);
+	{
+		RenderFolderPanel();
+	}
+	ImGui::EndChild();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar();
+
+	ImGui::SameLine();
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
+	ImGui::BeginChild("MainContent", ImVec2(0, 0), true, childFlags);
+	{
+		static fs::path currentWallpaper;
+
+		ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - 200) * 0.5f);
+		if (ImGui::Button("Random Wallpaper", ImVec2(200, 40))) {
+			currentWallpaper = mApp->GetRandomWallpaper();
+			auto bitmap = Util::LoadImage(currentWallpaper);
+			mCurrentWallpaper.texture = LoadFreeImageAsTexture(bitmap, mCurrentWallpaper.width, mCurrentWallpaper.height);
+		}
+
+		if (!currentWallpaper.empty()) {
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
+			ImGui::TextUnformatted("Current Wallpaper:");
+			ImGui::PopStyleColor();
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.8f, 1.0f, 1.0f));
+			ImGui::TextWrapped("%s", currentWallpaper.string().c_str());
+			ImGui::PopStyleColor();
+			if (mCurrentWallpaper.texture != 0) {
+				ImVec2 avail = ImGui::GetContentRegionAvail();
+
+				f32 scale = std::min(avail.x / mCurrentWallpaper.width, avail.y / mCurrentWallpaper.height);
+				ImVec2 size = ImVec2(mCurrentWallpaper.width * scale, mCurrentWallpaper.height * scale);
+
+				ImGui::Image(reinterpret_cast<ImTextureID>((uintptr_t)mCurrentWallpaper.texture), size);
+			}
+		}
+	}
+	ImGui::EndChild();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar();
+
+	RenderDemoWindows(); // Falls noch benötigt
 
 	ImGui::End();
 	EndFrame();
 }
 
-auto GUI::EndFrame() -> void {
-	ImGuiIO &io = ImGui::GetIO();
-	(void)io;
-	// Rendering
-	ImGui::Render();
-	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-	glClear(GL_COLOR_BUFFER_BIT);
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-	// Update and Render additional Platform Windows
-	// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-	//  For this specific demo app we could also call SDL_GL_MakeCurrent(window, mGLContext) directly)
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-		SDL_Window *backup_current_window = SDL_GL_GetCurrentWindow();
-		SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
-		SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
-	}
-
-	SDL_GL_SwapWindow(mWindow);
-}
-
-auto GUI::NewFrame() -> void {
-	// Start the Dear ImGui frame
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL3_NewFrame();
-	ImGui::NewFrame();
-}
-
-auto GUI::RenderDemoWindows() -> void {
-	ImGuiIO &io = ImGui::GetIO();
-	(void)io;
-
-	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-	if (show_demo_window)
-		ImGui::ShowDemoWindow(&show_demo_window);
-
-	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-	{
-		static float f = 0.0f;
-		static int counter = 0;
-
-		ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-
-		ImGui::Text("This is some useful text.");		   // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &show_another_window);
-
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);			 // Edit 1 float using a slider from 0.0f to 1.0f
-		ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
-
-		if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-			counter++;
-		ImGui::SameLine();
-		ImGui::Text("counter = %d", counter);
-
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-		ImGui::End();
-	}
-
-	// 3. Show another simple window.
-	if (show_another_window) {
-		ImGui::Begin("Another Window", &show_another_window); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-		ImGui::Text("Hello from another window!");
-		if (ImGui::Button("Close Me"))
-			show_another_window = false;
-		ImGui::End();
-	}
-}
-
 auto RenderFolderPathText(const WallpaperFolder &folder) -> void {
-	std::string indent;
-	if (folder.depth > 0) {
-		for (int i = 0; i < folder.depth; ++i) {
-			indent += "    ";
-		}
-		indent += "-> ";
-	}
-
-	ImGui::Text("%s%s", indent.c_str(), folder.path.filename().string().c_str());
-	for (const auto &pic : folder.picturePaths) {
-		ImGui::Text("  %s%s", indent.c_str(), pic.filename().string().c_str());
-	}
-
-	for (const auto &child : folder.childFolders) {
-		RenderFolderPathText(child);
-	}
+	ImGui::Text("%s", folder.path.string().c_str());
+	// for (const auto &pic : folder.picturePaths) {
+	// 	ImGui::Text("  %s%s", indent.c_str(), pic.filename().string().c_str());
+	// }
 }
 
 auto GUI::RenderFolderPanel() -> void {
 	ImGuiViewport *viewport = ImGui::GetMainViewport();
+	f32 contentHeight = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() * 2;
 	f32 panelWidth = viewport->Size.x * FOLDERPANEL_SIZE_FAKTOR;
+	f32 buttonWidth = panelWidth - ImGui::GetStyle().WindowPadding.x * 2;
 
+	ImGui::BeginChild("##FolderContent",
+					  ImVec2(buttonWidth, contentHeight),
+					  true,
+					  ImGuiWindowFlags_HorizontalScrollbar |
+						  ImGuiWindowFlags_NoDecoration);
 	for (const auto &folder : mApp->GetWallpaperFolders()) {
 		RenderFolderPathText(folder);
 	}
-	ImGui::Separator();
+	ImGui::EndChild();
 
-	f32 buttonWidth = panelWidth - ImGui::GetStyle().WindowPadding.x * 2;
 	if (ImGui::Button("+", ImVec2(buttonWidth, 0))) {
-		mApp->AddWallpaperFolder("C:\\Users\\knaub\\source\\repos\\JohannesBackgroundSwitcher\\testpaths");
-		mApp->AddWallpaperFolder("C:\\Users\\knaub\\source\\repos\\JohannesBackgroundSwitcher\\testpaths\\Anime");
-		mApp->AddWallpaperFolder("C:\\Users\\knaub\\source\\repos\\JohannesBackgroundSwitcher\\testpaths\\Fake");
+		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test");
+		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\1");
+		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\2");
+		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\3");
+		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\Anime");
+		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\Fake");
+	}
+	if (ImGui::Button("Random", ImVec2(buttonWidth, 0))) {
+		auto wallpaper = mApp->GetRandomWallpaper();
 	}
 }
 
@@ -201,7 +179,7 @@ auto GUI::InitRenderer() -> void {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 	Uint32 window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN;
-	mWindow = SDL_CreateWindow("Johannes Background Switcher", 1280, 720, window_flags);
+	mWindow = SDL_CreateWindow(APP_NAME, 1280, 720, window_flags);
 	if (mWindow == nullptr) {
 		throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
 	}
@@ -283,4 +261,93 @@ auto GUI::Shutdown() -> void {
 auto GUI::Init(App *app) -> void {
 	mApp = app;
 	InitRenderer();
+}
+
+auto GUI::EndFrame() -> void {
+	ImGuiIO &io = ImGui::GetIO();
+	(void)io;
+	// Rendering
+	ImGui::Render();
+	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+	glClear(GL_COLOR_BUFFER_BIT);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	// Update and Render additional Platform Windows
+	// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
+	//  For this specific demo app we could also call SDL_GL_MakeCurrent(window, mGLContext) directly)
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		SDL_Window *backup_current_window = SDL_GL_GetCurrentWindow();
+		SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+		SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+	}
+
+	SDL_GL_SwapWindow(mWindow);
+}
+
+auto GUI::NewFrame() -> void {
+	// Start the Dear ImGui frame
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL3_NewFrame();
+	ImGui::NewFrame();
+}
+
+auto GUI::RenderDemoWindows() -> void {
+	ImGuiIO &io = ImGui::GetIO();
+	(void)io;
+
+	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+	if (show_demo_window)
+		ImGui::ShowDemoWindow(&show_demo_window);
+
+	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+	{
+		static float f = 0.0f;
+		static int counter = 0;
+
+		ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
+
+		ImGui::Text("This is some useful text.");		   // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
+		ImGui::Checkbox("Another Window", &show_another_window);
+
+		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);			 // Edit 1 float using a slider from 0.0f to 1.0f
+		ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
+
+		if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
+			counter++;
+		ImGui::SameLine();
+		ImGui::Text("counter = %d", counter);
+
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+		ImGui::End();
+	}
+
+	// 3. Show another simple window.
+	if (show_another_window) {
+		ImGui::Begin("Another Window", &show_another_window); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+		ImGui::Text("Hello from another window!");
+		if (ImGui::Button("Close Me"))
+			show_another_window = false;
+		ImGui::End();
+	}
+}
+
+auto GUI::LoadFreeImageAsTexture(FIBITMAP *bitmap, i32 &width, i32 &height) -> GLuint {
+	width = FreeImage_GetWidth(bitmap);
+	height = FreeImage_GetHeight(bitmap);
+	auto b = FreeImage_ConvertTo32Bits(bitmap);
+	FreeImage_FlipVertical(b);
+
+	GLuint tex = 0;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_BGRA, GL_UNSIGNED_BYTE, FreeImage_GetBits(b));
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	FreeImage_Unload(bitmap);
+	return tex;
 }

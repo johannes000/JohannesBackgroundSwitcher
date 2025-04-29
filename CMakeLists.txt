@@ -20,7 +20,16 @@ CPMAddPackage(
   OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF"
 )
 
-
+CPMAddPackage(
+  NAME FreeImage
+  GITHUB_REPOSITORY danoli3/FreeImage
+  GIT_TAG 3.19.10
+  OPTIONS
+    "FREEIMAGE_BUILD_ZLIB TRUE"
+    "FREEIMAGE_BUILD_JPEG TRUE"
+    "FREEIMAGE_BUILD_PNG TRUE"
+    "FREEIMAGE_BUILD_STATIC TRUE"
+)
 
 CPMAddPackage(
   NAME spdlog
@@ -82,6 +91,7 @@ add_executable(${PROJECT_NAME} ${PLATFORM_SOURCES} ${CORE_SOURCES})
 # Include-Verzeichnisse
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src
+    ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
 )
 
 # Link-Bibliotheken
@@ -90,7 +100,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     opengl32
     SDL3::SDL3
     spdlog::spdlog
+    FreeImage
 )
+target_compile_definitions(${PROJECT_NAME} PRIVATE FREEIMAGE_LIB)
 # target_link_options(${PROJECT_NAME} PRIVATE -static -static-libgcc -static-libstdc++)
 
 # # Assets kopieren

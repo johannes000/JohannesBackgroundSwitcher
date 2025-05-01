@@ -2,6 +2,8 @@
 #include "utility\Includes.hpp"
 #include "FreeImage.h"
 
+#include <future>
+
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
@@ -54,7 +56,10 @@ private:
 	ImGuiIO mImGuiIO;
 	TextureData mCurrentWallpaper;
 
-		App *mApp;
+	App *mApp;
 
 	LogPtr log = AddLogger("GUI");
+
+	std::future<fs::path> mFolderFuture;
+	bool mIsFileDialogOpen{false};
 };

@@ -3,6 +3,8 @@
 #include "App.hpp"
 #include "nfd.hpp"
 
+#include <functional>
+
 namespace {
 bool show_demo_window = false;
 bool show_another_window = false;
@@ -125,16 +127,35 @@ auto GUI::RenderFolderPanel() -> void {
 	}
 	ImGui::EndChild();
 
-	if (ImGui::Button("+", ImVec2(buttonWidth, 0))) {
-		NFD::UniquePath path;
-		// TODO: Option für Standardpath !?
-		nfdresult_t result = NFD::PickFolder(path, "C:\\Wallpaper");
+	if (ImGui::Button("+", ImVec2(buttonWidth, 0)) && !mIsFileDialogOpen) {
+		mIsFileDialogOpen = true;
 
-		if (result == NFD_OKAY)
-			mApp->AddWallpaperFolder(path.get());
-		else
-			log->trace("Fehler: {}", NFD::GetError());
+		mFolderFuture = std::async(std::launch::async, []() {
+			fs::path returnPath;
+			NFD::UniquePath path;
+			// TODO: Option für Standardpath !?
+			nfdresult_t result = NFD::PickFolder(path, "C:\\Wallpaper");
+
+			if (result == NFD_OKAY) {
+				return fs::path(path.get());
+			} else {
+				return fs::path("");
+			}
+		});
 	}
+
+	using namespace std::literals;
+	if (mIsFileDialogOpen &&
+		mFolderFuture.valid() &&
+		mFolderFuture.wait_for(0s) == std::future_status::ready) {
+		fs::path path = mFolderFuture.get();
+		if (path.empty())
+			log->warn("Fehler beim Filedialog: ", NFD::GetError());
+		else
+			mApp->AddWallpaperFolder(path);
+		mIsFileDialogOpen = false;
+	}
+
 	if (ImGui::Button("Random", ImVec2(buttonWidth, 0))) {
 		auto wallpaper = mApp->GetRandomWallpaper();
 		mApp->SetWallpaper(wallpaper);

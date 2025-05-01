@@ -3,7 +3,17 @@
 #include "App.hpp"
 #include "utility\Serializer.hpp"
 
-// TODO: Platform Stuff
+namespace {
+i32 maxSelectionCount = 10;
+constexpr f64 PI = 3.14159265358979323846;
+} // namespace
+
+auto GetWeight(i32 count) -> f64 {
+	f64 norm = static_cast<f64>(count % maxSelectionCount) / maxSelectionCount;
+	f64 cos = std::cos(2.f * PI * norm);
+	return 0.1f + 0.9f * (cos + 1.f) / 2.f;
+}
+
 auto App::HandleEvents() -> void {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
@@ -16,9 +26,7 @@ auto App::HandleEvents() -> void {
 }
 
 auto App::HandleCounts(const fs::path &path) -> void {
-	auto &count = mPathUseCount[path];
-	if (++count > 3)
-		count = 0;
+	++mPathUseCount[path];
 }
 
 auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
@@ -31,9 +39,9 @@ auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
 			candidates.push_back(entryPath);
 			weights.push_back(1.f);
 		} else if (entry.is_directory()) {
-			i32 count = mPathUseCount.contains(entryPath) ? mPathUseCount[entryPath] : 0;
+			i32 count = mPathUseCount[entryPath];
 			candidates.push_back(entryPath);
-			weights.push_back(std::pow(.7f, count));
+			weights.push_back(GetWeight(count));
 		}
 	}
 	if (candidates.empty())
@@ -155,6 +163,8 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 		0,
 		(void *)absolutePath.string().c_str(),
 		SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+	if (ok)
+		mCurrentWallpaper = wallpaperPath;
 }
 
 auto App::GetRandomWallpaper() -> fs::path {
@@ -176,8 +186,8 @@ auto App::GetRandomWallpaper() -> fs::path {
 
 	std::vector<f64> weights;
 	for (const auto &path : eligible) {
-		i32 count = mPathUseCount.contains(path) ? mPathUseCount[path] : 0;
-		weights.push_back(std::pow(.7f, count));
+		i32 count = mPathUseCount[path];
+		weights.push_back(GetWeight(count));
 	}
 
 	std::discrete_distribution<> firstDist(weights.begin(), weights.end());
@@ -206,10 +216,20 @@ auto App::WallpaperChangeThread() -> void {
 }
 
 auto App::Init() -> void {
+	// AddWallpaperFolder("C:\\Wallpaper\\Test\\1");
+	// AddWallpaperFolder("C:\\Wallpaper\\Test\\2");
+	// AddWallpaperFolder("C:\\Wallpaper\\Test\\3");
+	// AddWallpaperFolder("C:\\Wallpaper\\Test\\Anime");
+	// AddWallpaperFolder("C:\\Wallpaper\\Test\\Fake");
+
 	mGUI.Init(this);
+
 	FreeImage_Initialise();
+
 	mRunning = true;
+
 	mPathUseCount = PathMapSerializer::Deserialize(USE_COUNT_FILE);
+
 	mGen = std::mt19937(std::random_device{}());
 
 	mWallpaperThreadRunning = true;

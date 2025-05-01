@@ -60,37 +60,32 @@ auto GUI::Render() -> void {
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
 	ImGui::BeginChild("MainContent", ImVec2(0, 0), true, childFlags);
 	{
-		static fs::path currentWallpaper;
 
 		ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - 200) * 0.5f);
 		if (ImGui::Button("Random Wallpaper", ImVec2(200, 40))) {
-			currentWallpaper = mApp->GetRandomWallpaper();
-			auto bitmap = Util::LoadImage(currentWallpaper);
-			mCurrentWallpaper.texture = LoadFreeImageAsTexture(bitmap, mCurrentWallpaper.width, mCurrentWallpaper.height);
-			mApp->SetWallpaper(currentWallpaper);
+			auto random = mApp->GetRandomWallpaper();
+			mApp->SetWallpaper(random);
 		}
 
-		if (!currentWallpaper.empty()) {
-			ImGui::Spacing();
-			ImGui::Separator();
-			ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
 
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
-			ImGui::TextUnformatted("Current Wallpaper:");
-			ImGui::PopStyleColor();
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
+		ImGui::TextUnformatted("Current Wallpaper:");
+		ImGui::PopStyleColor();
 
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.8f, 1.0f, 1.0f));
-			ImGui::TextWrapped("%s", currentWallpaper.string().c_str());
-			ImGui::PopStyleColor();
-			if (mCurrentWallpaper.texture != 0) {
-				ImVec2 avail = ImGui::GetContentRegionAvail();
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.8f, 1.0f, 1.0f));
+		ImGui::TextWrapped("%s", mApp->GetCurrentWallpaperPath().string().c_str());
+		ImGui::PopStyleColor();
+		// if (mCurrentWallpaper.texture != 0) {
+		// 	ImVec2 avail = ImGui::GetContentRegionAvail();
 
-				f32 scale = std::min(avail.x / mCurrentWallpaper.width, avail.y / mCurrentWallpaper.height);
-				ImVec2 size = ImVec2(mCurrentWallpaper.width * scale, mCurrentWallpaper.height * scale);
+		// 	f32 scale = std::min(avail.x / mCurrentWallpaper.width, avail.y / mCurrentWallpaper.height);
+		// 	ImVec2 size = ImVec2(mCurrentWallpaper.width * scale, mCurrentWallpaper.height * scale);
 
-				ImGui::Image(reinterpret_cast<ImTextureID>((uintptr_t)mCurrentWallpaper.texture), size);
-			}
-		}
+		// 	ImGui::Image(reinterpret_cast<ImTextureID>((uintptr_t)mCurrentWallpaper.texture), size);
+		// }
 	}
 	ImGui::EndChild();
 	ImGui::PopStyleColor();
@@ -131,11 +126,6 @@ auto GUI::RenderFolderPanel() -> void {
 
 	if (ImGui::Button("+", ImVec2(buttonWidth, 0))) {
 		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test");
-		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\1");
-		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\2");
-		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\3");
-		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\Anime");
-		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\Fake");
 	}
 	if (ImGui::Button("Random", ImVec2(buttonWidth, 0))) {
 		auto wallpaper = mApp->GetRandomWallpaper();

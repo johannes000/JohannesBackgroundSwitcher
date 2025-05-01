@@ -1,9 +1,10 @@
 ✔ Hintergrund Einstellen @done(01-05-25)
+✔ Timer für Hintergrund Wechseln @done(01-05-25)
 ☐ Filedialog für Ordner
 ☐ json Serializer
-☐ Timer für Hintergrund Wechseln
 ☐ Blacklist für Bilder
 ☐ Oben rechts im Bild den Namen printen
 ☐ Unittests
 ☐ Weight für Oberste Ebene selbst bestimmen
 ☐ n-Bildschirme Hintergründe
+☐ Bildschirmgrößen rausfinden

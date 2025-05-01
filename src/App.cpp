@@ -92,6 +92,13 @@ auto App::Run() -> void {
 }
 
 auto App::Shutdown() -> void {
+	if (mWallpaperThreadRunning) {
+		mWallpaperThreadRunning = false;
+		if (mWallpaperThread.joinable()) {
+			mWallpaperThread.join();
+		}
+	}
+
 	mGUI.Shutdown();
 	PathMapSerializer::Serialize(mPathUseCount, USE_COUNT_FILE);
 	FreeImage_DeInitialise();
@@ -135,16 +142,19 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	}
 
 	auto bitmap = Util::LoadImage(wallpaperPath);
+	if (FreeImage_GetWidth(bitmap) != 1920)
+		bitmap = FreeImage_Rescale(bitmap, 1920, 1080);
 
 	fs::path temp = outputDir / "1.bmp";
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
+	FreeImage_Unload(bitmap);
 
 	fs::path absolutePath = fs::absolute(temp);
 	BOOL ok = SystemParametersInfo(
 		SPI_SETDESKWALLPAPER,
 		0,
 		(void *)absolutePath.string().c_str(),
-		SPIF_UPDATEINIFILE);
+		SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 }
 
 auto App::GetRandomWallpaper() -> fs::path {
@@ -183,10 +193,25 @@ auto App::GetRandomWallpaper() -> fs::path {
 	return "C:/Wallpaper/1.webp";
 }
 
+auto App::WallpaperChangeThread() -> void {
+	while (mWallpaperThreadRunning) {
+		SetWallpaper(GetRandomWallpaper());
+
+		auto start = std::chrono::steady_clock::now();
+		while (mWallpaperThreadRunning &&
+			   std::chrono::steady_clock::now() - start < mWallpaperInterval) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		}
+	}
+}
+
 auto App::Init() -> void {
 	mGUI.Init(this);
 	FreeImage_Initialise();
 	mRunning = true;
 	mPathUseCount = PathMapSerializer::Deserialize(USE_COUNT_FILE);
 	mGen = std::mt19937(std::random_device{}());
+
+	mWallpaperThreadRunning = true;
+	mWallpaperThread = std::thread(&App::WallpaperChangeThread, this);
 }

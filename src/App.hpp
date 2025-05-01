@@ -3,6 +3,7 @@
 #include "GUI.hpp"
 
 #include <random>
+#include <chrono>
 
 struct WallpaperFolder {
 	fs::path path;
@@ -30,6 +31,8 @@ public:
 
 	auto GetRandomWallpaper() -> fs::path;
 
+	auto WallpaperChangeThread() -> void;
+
 private:
 	auto Update() -> void;
 	auto HandleEvents() -> void;
@@ -52,4 +55,8 @@ private:
 
 	LogPtr log = AddLogger("APP");
 	bool mRunning{true};
+
+	std::atomic<bool> mWallpaperThreadRunning{false};
+	std::thread mWallpaperThread;
+	std::chrono::minutes mWallpaperInterval{5};
 };

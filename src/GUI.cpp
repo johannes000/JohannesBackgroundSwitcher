@@ -67,6 +67,7 @@ auto GUI::Render() -> void {
 			currentWallpaper = mApp->GetRandomWallpaper();
 			auto bitmap = Util::LoadImage(currentWallpaper);
 			mCurrentWallpaper.texture = LoadFreeImageAsTexture(bitmap, mCurrentWallpaper.width, mCurrentWallpaper.height);
+			mApp->SetWallpaper(currentWallpaper);
 		}
 
 		if (!currentWallpaper.empty()) {
@@ -122,12 +123,14 @@ auto GUI::RenderFolderPanel() -> void {
 	for (const auto &folder : mApp->GetWallpaperFolders()) {
 		RenderFolderPathText(folder);
 	}
+	ImGui::Separator();
 	for (const auto &[path, count] : mApp->GetPathCount()) {
 		ImGui::Text("%s\t %d", path.string().c_str(), count);
 	}
 	ImGui::EndChild();
 
 	if (ImGui::Button("+", ImVec2(buttonWidth, 0))) {
+		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test");
 		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\1");
 		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\2");
 		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test\\3");
@@ -136,6 +139,7 @@ auto GUI::RenderFolderPanel() -> void {
 	}
 	if (ImGui::Button("Random", ImVec2(buttonWidth, 0))) {
 		auto wallpaper = mApp->GetRandomWallpaper();
+		mApp->SetWallpaper(wallpaper);
 	}
 }
 

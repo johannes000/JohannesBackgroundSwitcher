@@ -26,6 +26,7 @@ public:
 	auto RemoveWallpaperFolder(const fs::path path) -> void;
 	auto GetWallpaperFolders() const -> const auto & { return mWallpaperFolders; };
 	auto GetPathCount() const -> const auto & { return mPathUseCount; };
+	auto SetWallpaper(const fs::path &wallpaperPath) -> void;
 
 	auto GetRandomWallpaper() -> fs::path;
 
@@ -46,6 +47,8 @@ private:
 
 	std::vector<WallpaperFolder> mWallpaperFolders;
 	std::map<fs::path, i32> mPathUseCount;
+	std::vector<fs::path> mWallpaperBlacklist;
+	std::vector<fs::path> mFolderBlacklist;
 
 	LogPtr log = AddLogger("APP");
 	bool mRunning{true};

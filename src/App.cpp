@@ -1,6 +1,9 @@
+// TODO: Platform Stuff
+#include <Windows.h>
 #include "App.hpp"
 #include "utility\Serializer.hpp"
 
+// TODO: Platform Stuff
 auto App::HandleEvents() -> void {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
@@ -115,6 +118,33 @@ auto App::AddWallpaperFolder(const fs::path path) -> void {
 }
 
 auto App::RemoveWallpaperFolder(const fs::path /* path */) -> void {
+}
+
+auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
+	if (!fs::exists(wallpaperPath) ||
+		fs::is_directory(wallpaperPath) ||
+		!Util::IsImageFile(wallpaperPath))
+		return;
+	log->trace("Setze {} als Wallpaper", wallpaperPath.string());
+
+	fs::path outputDir = "./CurrentWallpapers";
+
+	// Ordner erstellen falls nicht vorhanden
+	if (!fs::exists(outputDir)) {
+		fs::create_directory(outputDir);
+	}
+
+	auto bitmap = Util::LoadImage(wallpaperPath);
+
+	fs::path temp = outputDir / "1.bmp";
+	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
+
+	fs::path absolutePath = fs::absolute(temp);
+	BOOL ok = SystemParametersInfo(
+		SPI_SETDESKWALLPAPER,
+		0,
+		(void *)absolutePath.string().c_str(),
+		SPIF_UPDATEINIFILE);
 }
 
 auto App::GetRandomWallpaper() -> fs::path {

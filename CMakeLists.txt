@@ -96,11 +96,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 # Link-Bibliotheken
 target_link_libraries(${PROJECT_NAME} PRIVATE
+    user32
     imgui
     opengl32
     SDL3::SDL3
     spdlog::spdlog
     FreeImage
+    # User32.lib # Windows TODO: Platform Stuff
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE FREEIMAGE_LIB)
 # target_link_options(${PROJECT_NAME} PRIVATE -static -static-libgcc -static-libstdc++)

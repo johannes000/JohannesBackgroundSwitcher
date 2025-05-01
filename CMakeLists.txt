@@ -32,6 +32,15 @@ CPMAddPackage(
 )
 
 CPMAddPackage(
+    NAME nativefiledialog-extended
+    GITHUB_REPOSITORY btzy/nativefiledialog-extended
+    GIT_TAG v1.2.1
+    OPTIONS
+        "NFD_BUILD_TESTS OFF" 
+        "NFD_PORTAL OFF" 
+)
+
+CPMAddPackage(
   NAME spdlog
   GITHUB_REPOSITORY gabime/spdlog
   VERSION 1.15.1
@@ -92,17 +101,18 @@ add_executable(${PROJECT_NAME} ${PLATFORM_SOURCES} ${CORE_SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
+    ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
 )
 
 # Link-Bibliotheken
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    user32
+    user32 # Windows TODO: Platform Stuff
     imgui
     opengl32
     SDL3::SDL3
     spdlog::spdlog
     FreeImage
-    # User32.lib # Windows TODO: Platform Stuff
+    nfd # nativefiledialog-extended
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE FREEIMAGE_LIB)
 # target_link_options(${PROJECT_NAME} PRIVATE -static -static-libgcc -static-libstdc++)

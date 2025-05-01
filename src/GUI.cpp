@@ -1,6 +1,7 @@
 #include "GUI.hpp"
 
 #include "App.hpp"
+#include "nfd.hpp"
 
 namespace {
 bool show_demo_window = false;
@@ -125,7 +126,14 @@ auto GUI::RenderFolderPanel() -> void {
 	ImGui::EndChild();
 
 	if (ImGui::Button("+", ImVec2(buttonWidth, 0))) {
-		mApp->AddWallpaperFolder("C:\\Wallpaper\\Test");
+		NFD::UniquePath path;
+		// TODO: Option für Standardpath !?
+		nfdresult_t result = NFD::PickFolder(path, "C:\\Wallpaper");
+
+		if (result == NFD_OKAY)
+			mApp->AddWallpaperFolder(path.get());
+		else
+			log->trace("Fehler: {}", NFD::GetError());
 	}
 	if (ImGui::Button("Random", ImVec2(buttonWidth, 0))) {
 		auto wallpaper = mApp->GetRandomWallpaper();
@@ -245,6 +253,8 @@ auto GUI::InitRenderer() -> void {
 }
 
 auto GUI::Shutdown() -> void {
+	NFD::Quit();
+
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL3_Shutdown();
 	ImGui::DestroyContext();
@@ -257,6 +267,7 @@ auto GUI::Shutdown() -> void {
 auto GUI::Init(App *app) -> void {
 	mApp = app;
 	InitRenderer();
+	NFD::Init();
 }
 
 auto GUI::EndFrame() -> void {

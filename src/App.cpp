@@ -232,7 +232,6 @@ auto App::Shutdown() -> void {
 
 	mGUI.Shutdown();
 	Serialize();
-	PathMapSerializer::Serialize(mPathUseCount, USE_COUNT_FILE);
 	FreeImage_DeInitialise();
 }
 

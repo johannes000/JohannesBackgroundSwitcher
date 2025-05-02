@@ -66,7 +66,7 @@ private:
 	std::mt19937 mGen;
 
 	std::vector<WallpaperFolder> mWallpaperFolders;
-	std::map<fs::path, i32> mPathUseCount;
+	std::unordered_map<fs::path, i32> mPathUseCount;
 	std::unordered_set<fs::path> mWallpaperBlacklist;
 	std::unordered_set<fs::path> mFolderBlacklist;
 

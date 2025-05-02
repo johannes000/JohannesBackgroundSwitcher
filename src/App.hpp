@@ -4,6 +4,7 @@
 
 #include <random>
 #include <chrono>
+#include <unordered_set>
 
 struct WallpaperFolder {
 	fs::path path;
@@ -23,7 +24,7 @@ public:
 	auto Run() -> void;
 	auto Shutdown() -> void;
 
-	auto AddWallpaperFolder(const fs::path path) -> void;
+	auto AddWallpaperFolder(const fs::path path, bool selected = true) -> void;
 	auto RemoveWallpaperFolder(const fs::path path) -> void;
 	auto GetWallpaperFolders() const -> const auto & { return mWallpaperFolders; };
 	auto GetPathCount() const -> const auto & { return mPathUseCount; };
@@ -39,6 +40,9 @@ private:
 	auto HandleEvents() -> void;
 	auto HandleCounts(const fs::path &path) -> void;
 
+	auto Serialize() -> void;
+	auto Deserialize() -> void;
+
 	auto SelectWeightedEntry(const fs::path &path) -> fs::path;
 	auto RecursiveSelectEntry(const fs::path &current) -> fs::path;
 
@@ -51,8 +55,8 @@ private:
 
 	std::vector<WallpaperFolder> mWallpaperFolders;
 	std::map<fs::path, i32> mPathUseCount;
-	std::vector<fs::path> mWallpaperBlacklist;
-	std::vector<fs::path> mFolderBlacklist;
+	std::unordered_set<fs::path> mWallpaperBlacklist;
+	std::unordered_set<fs::path> mFolderBlacklist;
 
 	fs::path mCurrentWallpaper;
 

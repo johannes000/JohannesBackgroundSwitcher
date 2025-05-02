@@ -5,7 +5,12 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
-# set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose build type" FORCE)
+endif()
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE)
 
 message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
 
@@ -38,6 +43,16 @@ CPMAddPackage(
     OPTIONS
         "NFD_BUILD_TESTS OFF" 
         "NFD_PORTAL OFF" 
+)
+
+CPMAddPackage(
+  NAME nlohmann-json
+  VERSION 3.12.0 
+  GITHUB_REPOSITORY nlohmann/json
+  OPTIONS
+    "JSON_BuildTests OFF" 
+    "JSON_MultipleHeaders OFF"
+    "JSON_Install OFF" 
 )
 
 CPMAddPackage(
@@ -80,12 +95,21 @@ include_directories(imgui INTERFACE
 target_compile_definitions(imgui PUBLIC -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS) # optional imgui setting
 set_target_properties(imgui PROPERTIES FOLDER third-party) # optoinal IDE dir
 
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/Debug")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/Debug")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/Debug")
 
-set(BUILD_PATH ${PROJECT_SOURCE_DIR}/build/bin/Debug)
-set(EXECUTABLE_OUTPUT_PATH ${BUILD_PATH})
-set(LIBRARY_OUTPUT_PATH ${BUILD_PATH})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
+# Für Multi-Config Generatoren (Visual Studio, Xcode)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+
+# CPM Konfiguration für Debug/Release builds
+set(CPM_USE_LOCAL_PACKAGES ON)  # Bessere Wiederverwendung zwischen Builds
 
 # Alle .cpp- und .hpp-Dateien rekursiv suchen
 file(GLOB_RECURSE CORE_SOURCES
@@ -102,15 +126,17 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
     ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
+    ${CPM_PACKAGE_nlohmann-json_SOURCE_DIR}/include
 )
 
 # Link-Bibliotheken
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    user32 # Windows TODO: Platform Stuff
+    $<$<PLATFORM_ID:Windows>:user32>
     imgui
     opengl32
     SDL3::SDL3
     spdlog::spdlog
+    nlohmann_json::nlohmann_json
     FreeImage
     nfd # nativefiledialog-extended
 )
@@ -130,16 +156,23 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE FREEIMAGE_LIB)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
 target_compile_options(${PROJECT_NAME} PRIVATE
     $<$<CONFIG:Debug>:-g -O0>
-    $<$<CONFIG:Release>:-O3>
+    $<$<CONFIG:Release>:-O3 -DNDEBUG>
 )
 
 if(SDL_ADDED)
   if(WIN32 AND SDL_SHARED)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${SDL_BINARY_DIR}/SDL3.dll"
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>
-      COMMENT "Copying SDL3.dll to output directory"
-    )
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${SDL_BINARY_DIR}/SDL3.dll"
+      "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    COMMENT "Copying SDL3.dll to output directory"
+  )
   endif()
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  install(TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION bin
+    BUNDLE DESTINATION bin
+  )
 endif()

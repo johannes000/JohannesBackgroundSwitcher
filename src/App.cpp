@@ -1,11 +1,15 @@
 // TODO: Platform Stuff
 #include <Windows.h>
 #include "App.hpp"
-#include "utility\Serializer.hpp"
+#include "utility/Serializer.hpp"
+#include "nlohmann/json.hpp"
 
 namespace {
 i32 maxSelectionCount = 10;
+
 constexpr f64 PI = 3.14159265358979323846;
+
+constexpr std::string statsPath = "./stats.json";
 } // namespace
 
 auto GetWeight(i32 count) -> f64 {
@@ -29,13 +33,83 @@ auto App::HandleCounts(const fs::path &path) -> void {
 	++mPathUseCount[path];
 }
 
+auto App::Serialize() -> void {
+	using json = nlohmann::json;
+	json data;
+
+	data["Wallpaper Folders"] = json::array();
+	for (const auto &[path, selected] : mWallpaperFolders) {
+		data["Wallpaper Folders"].push_back(
+			{{"path", path},
+			 {"selected", selected}});
+	}
+
+	data["Path Count"] = json::object();
+	for (const auto &[path, count] : mPathUseCount) {
+		data["Path Count"][path.string()] = count;
+	}
+
+	data["Wallpaper Blacklist"] = json::array();
+	for (const auto &path : mWallpaperBlacklist) {
+		data["Wallpaper Blacklis"].push_back(path.string());
+	}
+
+	data["Folder Blacklist"] = json::array();
+	for (const auto &path : mFolderBlacklist) {
+		data["Folder Blacklist"].push_back(path.string());
+	}
+
+	std::ofstream file(statsPath);
+	file << data.dump(4);
+	log->trace("Stats gespeichert", statsPath);
+}
+
+auto App::Deserialize() -> void {
+	if (!fs::exists(fs::path(statsPath)))
+		return;
+
+	std::ifstream file(statsPath);
+
+	using json = nlohmann::json;
+	json data = json::parse(file);
+
+	if (data.contains("Wallpaper Folders")) {
+		for (const auto &folder : data["Wallpaper Folders"]) {
+			fs::path path = folder["path"].get<std::string>();
+			bool selected = folder.value("selected", true);
+			AddWallpaperFolder(path, selected);
+		}
+	}
+
+	if (data.contains("Path Count")) {
+		for (const auto &[path, count] : data["Path Count"].items()) {
+			mPathUseCount[fs::path(path)] = count.get<i32>();
+		}
+	}
+
+	if (data.contains("Wallpaper Blacklist")) {
+		for (const auto &pathStr : data["Wallpaper Blacklist"]) {
+			mWallpaperBlacklist.emplace(fs::path(pathStr.get<std::string>()));
+		}
+	}
+
+	if (data.contains("Folder Blacklist")) {
+		for (const auto &pathStr : data["Folder Blacklist"]) {
+			mFolderBlacklist.emplace(fs::path(pathStr.get<std::string>()));
+		}
+	}
+
+	log->trace("Stats geladen", statsPath);
+}
+
 auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
 	std::vector<fs::path> candidates;
 	std::vector<f64> weights;
 
 	for (const auto &entry : fs::directory_iterator(path)) {
 		const auto &entryPath = entry.path();
-		if (Util::IsImageFile(entryPath)) {
+		if (mWallpaperBlacklist.contains(entryPath)) {
+		} else if (Util::IsImageFile(entryPath)) {
 			candidates.push_back(entryPath);
 			weights.push_back(1.f);
 		} else if (entry.is_directory()) {
@@ -108,11 +182,12 @@ auto App::Shutdown() -> void {
 	}
 
 	mGUI.Shutdown();
+	Serialize();
 	PathMapSerializer::Serialize(mPathUseCount, USE_COUNT_FILE);
 	FreeImage_DeInitialise();
 }
 
-auto App::AddWallpaperFolder(const fs::path path) -> void {
+auto App::AddWallpaperFolder(const fs::path path, bool selected) -> void {
 	if (!fs::exists(path)) {
 		log->warn("Pfad {} exzestiert nicht. Kann nicht hinzufügen", path.string());
 		return;
@@ -121,6 +196,8 @@ auto App::AddWallpaperFolder(const fs::path path) -> void {
 		log->warn("{} ist eine Datei. Kann nicht hinzufügen", path.string());
 		return;
 	}
+	log->trace("Adde zu den Foldern: {}", path.string());
+
 	for (const auto &folder : mWallpaperFolders) {
 		if (folder.path == path) {
 			log->info("{} ist schon im System.");
@@ -129,6 +206,7 @@ auto App::AddWallpaperFolder(const fs::path path) -> void {
 	}
 	WallpaperFolder wf;
 	wf.path = path;
+	wf.selected = selected;
 	mWallpaperFolders.push_back(wf);
 }
 
@@ -142,6 +220,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 		return;
 	log->trace("Setze {} als Wallpaper", wallpaperPath.string());
 
+	mWallpaperBlacklist.emplace(wallpaperPath);
 	fs::path outputDir = "./CurrentWallpapers";
 
 	// Ordner erstellen falls nicht vorhanden
@@ -169,7 +248,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 
 auto App::GetRandomWallpaper() -> fs::path {
 	if (mWallpaperFolders.empty()) {
-		log->warn("Keine Ordner im System");
+		log->info("Keine Ordner im System");
 		return "";
 	}
 	std::vector<fs::path> eligible;
@@ -184,13 +263,8 @@ auto App::GetRandomWallpaper() -> fs::path {
 		return "";
 	}
 
-	std::vector<f64> weights;
-	for (const auto &path : eligible) {
-		i32 count = mPathUseCount[path];
-		weights.push_back(GetWeight(count));
-	}
-
-	std::discrete_distribution<> firstDist(weights.begin(), weights.end());
+	// TODO: Weights selber aussuchen können wenn per Settings gewünscht
+	std::uniform_int_distribution<size_t> firstDist(0, eligible.size() - 1);
 
 	while (true) {
 		fs::path base = eligible[firstDist(mGen)];
@@ -216,19 +290,13 @@ auto App::WallpaperChangeThread() -> void {
 }
 
 auto App::Init() -> void {
-	// AddWallpaperFolder("C:\\Wallpaper\\Test\\1");
-	// AddWallpaperFolder("C:\\Wallpaper\\Test\\2");
-	// AddWallpaperFolder("C:\\Wallpaper\\Test\\3");
-	// AddWallpaperFolder("C:\\Wallpaper\\Test\\Anime");
-	// AddWallpaperFolder("C:\\Wallpaper\\Test\\Fake");
-
 	mGUI.Init(this);
 
 	FreeImage_Initialise();
 
 	mRunning = true;
 
-	mPathUseCount = PathMapSerializer::Deserialize(USE_COUNT_FILE);
+	Deserialize();
 
 	mGen = std::mt19937(std::random_device{}());
 

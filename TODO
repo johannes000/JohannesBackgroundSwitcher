@@ -1,11 +1,23 @@
-✔ Hintergrund Einstellen @done(01-05-25)
-✔ Timer für Hintergrund Wechseln @done(01-05-25)
-☐ Filedialog für Ordner
-☐ json Serializer
-☐ Tasten Kombo zum wechseln
-☐ Blacklist für Bilder
-☐ Oben rechts im Bild den Namen printen
-☐ Unittests
-☐ Weight für Oberste Ebene selbst bestimmen
-☐ n-Bildschirme Hintergründe
-☐ Bildschirmgrößen rausfinden
+Funktions:
+    ✔ Hintergrund Einstellen @done(01-05-25)
+    ✔ Timer für Hintergrund Wechseln @done(01-05-25)
+    ✔ Filedialog für Ordner @done(01-05-25)
+    ✔ json Serializer @done(02-05-25)
+    ☐ Checkboxen für Folder
+    ☐ Rechtsklick auf Folder
+        ☐ Löschen
+        ☐ Bearbeiten -> Neuer FileDialog?
+    ☐ Tasten Kombo zum wechseln
+    ☐ Ins Tray Minimieren
+    ✔ Blacklist für Bilder @done(02-05-25)
+    ☐ Settings Fenster
+    ☐ Path Blacklist über Settings
+    ☐ Oben rechts im Bild den Namen printen
+    ☐ Wenn Prog schon an ist zur ersten Instanz switchen
+    ☐ Unittests
+    ☐ Weight für Oberste Ebene selbst bestimmen
+    ☐ n-Bildschirme Hintergründe
+    ☐ Bildschirmgrößen rausfinden
+
+Bugs:
+    ☐ Bug: Wenn alle Bilder bilder Blacklisted sind gibts Probleme

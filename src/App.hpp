@@ -27,6 +27,7 @@ public:
 	auto AddWallpaperFolder(const fs::path path, bool selected = true) -> void;
 	auto RemoveWallpaperFolder(const fs::path path) -> void;
 	auto GetWallpaperFolders() const -> const auto & { return mWallpaperFolders; };
+	auto GetWallpaperFolders() -> auto & { return mWallpaperFolders; };
 	auto GetPathCount() const -> const auto & { return mPathUseCount; };
 	auto GetCurrentWallpaperPath() const -> const fs::path & { return mCurrentWallpaper; };
 	auto SetWallpaper(const fs::path &wallpaperPath) -> void;

@@ -100,8 +100,8 @@ auto GUI::Render() -> void {
 	EndFrame();
 }
 
-auto RenderFolderPathText(const WallpaperFolder &folder) -> void {
-	ImGui::Text("%s", folder.path.string().c_str());
+auto RenderFolderPathText(WallpaperFolder &folder) -> void {
+	ImGui::Checkbox(folder.path.string().c_str(), &folder.selected);
 	// for (const auto &pic : folder.picturePaths) {
 	// 	ImGui::Text("  %s%s", indent.c_str(), pic.filename().string().c_str());
 	// }
@@ -118,7 +118,7 @@ auto GUI::RenderFolderPanel() -> void {
 					  true,
 					  ImGuiWindowFlags_HorizontalScrollbar |
 						  ImGuiWindowFlags_NoDecoration);
-	for (const auto &folder : mApp->GetWallpaperFolders()) {
+	for (auto &folder : mApp->GetWallpaperFolders()) {
 		RenderFolderPathText(folder);
 	}
 	ImGui::Separator();

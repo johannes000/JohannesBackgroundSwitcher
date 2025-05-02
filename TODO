@@ -3,7 +3,7 @@ Funktions:
     ✔ Timer für Hintergrund Wechseln @done(01-05-25)
     ✔ Filedialog für Ordner @done(01-05-25)
     ✔ json Serializer @done(02-05-25)
-    ☐ Checkboxen für Folder
+    ✔ Checkboxen für Folder @done(02-05-25)
     ☐ Rechtsklick auf Folder
         ☐ Löschen
         ☐ Bearbeiten -> Neuer FileDialog?

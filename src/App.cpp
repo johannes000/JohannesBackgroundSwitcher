@@ -51,7 +51,7 @@ auto App::Serialize() -> void {
 
 	data["Wallpaper Blacklist"] = json::array();
 	for (const auto &path : mWallpaperBlacklist) {
-		data["Wallpaper Blacklis"].push_back(path.string());
+		data["Wallpaper Blacklist"].push_back(path.string());
 	}
 
 	data["Folder Blacklist"] = json::array();

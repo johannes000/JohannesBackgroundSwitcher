@@ -9,7 +9,9 @@ i32 maxSelectionCount = 10;
 
 constexpr f64 PI = 3.14159265358979323846;
 
-constexpr std::string statsPath = "./stats.json";
+constexpr const char *statsPath = "./stats.json";
+constexpr const char *settingsPath = "./settings.json";
+constexpr const char *defaultSettingsPath = "./default_settings.json";
 } // namespace
 
 auto GetWeight(i32 count) -> f64 {
@@ -34,6 +36,11 @@ auto App::HandleCounts(const fs::path &path) -> void {
 }
 
 auto App::Serialize() -> void {
+	SerializeSettings();
+	SerializeStats();
+}
+
+auto App::SerializeStats() -> void {
 	using json = nlohmann::json;
 	json data;
 
@@ -63,40 +70,86 @@ auto App::Serialize() -> void {
 	file << data.dump(4);
 }
 
+auto App::SerializeSettings() -> void {
+	using json = nlohmann::json;
+
+	json data;
+	data["Interval"] = mWallpaperInterval.count();
+
+	std::ofstream file(settingsPath);
+	file << data.dump(4);
+}
+
 auto App::Deserialize() -> void {
+	DeserializeStats();
+	DeserializeSettings();
+}
+
+auto App::DeserializeStats() -> void {
 	if (!fs::exists(fs::path(statsPath)))
 		return;
 
-	std::ifstream file(statsPath);
+	try {
+		std::ifstream file(statsPath);
 
+		using json = nlohmann::json;
+		json data = json::parse(file);
+
+		if (data.contains("Wallpaper Folders")) {
+			for (const auto &folder : data["Wallpaper Folders"]) {
+				fs::path path = folder["path"].get<std::string>();
+				bool selected = folder.value("selected", true);
+				AddWallpaperFolder(path, selected);
+			}
+		}
+
+		if (data.contains("Path Count")) {
+			for (const auto &[path, count] : data["Path Count"].items()) {
+				mPathUseCount[fs::path(path)] = count.get<i32>();
+			}
+		}
+
+		if (data.contains("Wallpaper Blacklist")) {
+			for (const auto &pathStr : data["Wallpaper Blacklist"]) {
+				mWallpaperBlacklist.emplace(fs::path(pathStr.get<std::string>()));
+			}
+		}
+
+		if (data.contains("Folder Blacklist")) {
+			for (const auto &pathStr : data["Folder Blacklist"]) {
+				mFolderBlacklist.emplace(fs::path(pathStr.get<std::string>()));
+			}
+		}
+	} catch (const std::exception &e) {
+		log->warn("Fehler beim Laden der Settings: {}", e.what());
+		return;
+	}
+}
+
+auto App::DeserializeSettings() -> void {
 	using json = nlohmann::json;
-	json data = json::parse(file);
 
-	if (data.contains("Wallpaper Folders")) {
-		for (const auto &folder : data["Wallpaper Folders"]) {
-			fs::path path = folder["path"].get<std::string>();
-			bool selected = folder.value("selected", true);
-			AddWallpaperFolder(path, selected);
-		}
+	std::string path = settingsPath;
+	if (!fs::exists(path))
+		path = defaultSettingsPath;
+	if (!fs::exists(path)) {
+		log->warn("Konnte keine Settings Laden. Viel Glück!");
+		return;
 	}
 
-	if (data.contains("Path Count")) {
-		for (const auto &[path, count] : data["Path Count"].items()) {
-			mPathUseCount[fs::path(path)] = count.get<i32>();
-		}
-	}
+	try {
 
-	if (data.contains("Wallpaper Blacklist")) {
-		for (const auto &pathStr : data["Wallpaper Blacklist"]) {
-			mWallpaperBlacklist.emplace(fs::path(pathStr.get<std::string>()));
-		}
-	}
+		std::ifstream file(path);
+		json data = json::parse(file);
 
-	if (data.contains("Folder Blacklist")) {
-		for (const auto &pathStr : data["Folder Blacklist"]) {
-			mFolderBlacklist.emplace(fs::path(pathStr.get<std::string>()));
+		if (data.contains("Interval")) {
+			mWallpaperInterval = std::chrono::minutes(data["Interval"].get<i32>());
 		}
+	} catch (const std::exception &e) {
+		log->warn("Fehler beim Laden der Settings: {}", e.what());
+		return;
 	}
+	log->trace("Settings erfolgreich geladen");
 }
 
 auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {

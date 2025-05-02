@@ -39,7 +39,12 @@ public:
 	auto WallpaperChangeThread() -> void;
 
 	auto Serialize() -> void;
+	auto SerializeStats() -> void;
+	auto SerializeSettings() -> void;
+
 	auto Deserialize() -> void;
+	auto DeserializeStats() -> void;
+	auto DeserializeSettings() -> void;
 
 	auto SetWallpaperIntervalInMinutes(u32 minutes) -> void { mWallpaperInterval = std::chrono::minutes(minutes); };
 	auto GetWallpaperInterval() const -> const auto & { return mWallpaperInterval; };

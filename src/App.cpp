@@ -49,10 +49,10 @@ auto App::Serialize() -> void {
 		data["Path Count"][path.string()] = count;
 	}
 
-	data["Wallpaper Blacklist"] = json::array();
-	for (const auto &path : mWallpaperBlacklist) {
-		data["Wallpaper Blacklist"].push_back(path.string());
-	}
+	// data["Wallpaper Blacklist"] = json::array();
+	// for (const auto &path : mWallpaperBlacklist) {
+	// 	data["Wallpaper Blacklist"].push_back(path.string());
+	// }
 
 	data["Folder Blacklist"] = json::array();
 	for (const auto &path : mFolderBlacklist) {
@@ -61,7 +61,6 @@ auto App::Serialize() -> void {
 
 	std::ofstream file(statsPath);
 	file << data.dump(4);
-	log->trace("Stats gespeichert", statsPath);
 }
 
 auto App::Deserialize() -> void {
@@ -98,8 +97,6 @@ auto App::Deserialize() -> void {
 			mFolderBlacklist.emplace(fs::path(pathStr.get<std::string>()));
 		}
 	}
-
-	log->trace("Stats geladen", statsPath);
 }
 
 auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
@@ -128,7 +125,6 @@ auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
 }
 
 auto App::RecursiveSelectEntry(const fs::path &current) -> fs::path {
-	log->trace("Durchsuche {}", current.string());
 
 	if (!fs::exists(current))
 		return {};
@@ -208,6 +204,7 @@ auto App::AddWallpaperFolder(const fs::path path, bool selected) -> void {
 	wf.path = path;
 	wf.selected = selected;
 	mWallpaperFolders.push_back(wf);
+	std::sort(mWallpaperFolders.begin(), mWallpaperFolders.end(), [](WallpaperFolder a, WallpaperFolder b) -> bool { return a.path < b.path; });
 }
 
 auto App::RemoveWallpaperFolder(const fs::path /* path */) -> void {
@@ -251,6 +248,8 @@ auto App::GetRandomWallpaper() -> fs::path {
 		log->info("Keine Ordner im System");
 		return "";
 	}
+	i32 a = 0;
+
 	std::vector<fs::path> eligible;
 	for (const auto &wf : mWallpaperFolders) {
 		if (wf.selected) {
@@ -268,7 +267,6 @@ auto App::GetRandomWallpaper() -> fs::path {
 
 	while (true) {
 		fs::path base = eligible[firstDist(mGen)];
-		log->trace("Top lvl Auswahl: {}", base.string());
 
 		fs::path result = RecursiveSelectEntry(base);
 		if (!result.empty())
@@ -278,13 +276,14 @@ auto App::GetRandomWallpaper() -> fs::path {
 }
 
 auto App::WallpaperChangeThread() -> void {
+	using namespace std::literals;
 	while (mWallpaperThreadRunning) {
 		SetWallpaper(GetRandomWallpaper());
 
 		auto start = std::chrono::steady_clock::now();
 		while (mWallpaperThreadRunning &&
 			   std::chrono::steady_clock::now() - start < mWallpaperInterval) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			std::this_thread::sleep_for(1s);
 		}
 	}
 }

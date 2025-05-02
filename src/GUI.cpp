@@ -11,6 +11,9 @@ bool show_another_window = false;
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 constexpr f32 FOLDERPANEL_SIZE_FAKTOR = 1.f / 3.f;
+
+constexpr std::array<i32, 10> intervals{1, 2, 5, 10, 30, 1 * 60, 2 * 60, 5 * 60, 10 * 60, 24 * 60};
+constexpr std::array<const char *, 10> intervalStrings{"1 min", "2 min", "5 min", "10 min", "30 min", "1 hour", "2 hours", "5 hours", "10 hours", "24 hours"};
 } // namespace
 
 auto GUI::HandleEvents() -> void {
@@ -151,14 +154,47 @@ auto GUI::RenderFolderPanel() -> void {
 		fs::path path = mFolderFuture.get();
 		if (path.empty())
 			log->warn("Fehler beim Filedialog: ", NFD::GetError());
-		else
+		else {
 			mApp->AddWallpaperFolder(path);
+			mApp->Serialize();
+		}
 		mIsFileDialogOpen = false;
 	}
 
-	if (ImGui::Button("Random", ImVec2(buttonWidth, 0))) {
+	if (ImGui::Button("Manual", ImVec2(buttonWidth * 2 / 3, 0))) {
 		auto wallpaper = mApp->GetRandomWallpaper();
 		mApp->SetWallpaper(wallpaper);
+	}
+
+	ImGui::SameLine();
+
+	static size_t currentInterval = 3;
+	for (size_t i = 0; i < intervals.size(); i++) {
+		if (mApp->GetWallpaperInterval() == std::chrono::minutes(intervals[i])) {
+			currentInterval = i;
+			break;
+		}
+	}
+	f32 dropdownWidth = buttonWidth * 1 / 3 - ImGui::GetStyle().WindowPadding.x;
+
+	ImVec2 comboPos = ImGui::GetCursorScreenPos();
+	comboPos.y -= ImGui::GetTextLineHeightWithSpacing() * (intervals.size() + 1);
+
+	ImGui::SetNextWindowPos(comboPos);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(dropdownWidth, 0), ImVec2(dropdownWidth, FLT_MAX));
+
+	if (ImGui::BeginCombo("##SelectInterval", intervalStrings[currentInterval], ImGuiComboFlags_NoArrowButton)) {
+		for (size_t i = 0; i < intervals.size(); i++) {
+			bool isSelected = (currentInterval == i);
+			if (ImGui::Selectable(intervalStrings[i], isSelected, 0, ImVec2(dropdownWidth, 0))) {
+				mApp->SetWallpaperIntervalInMinutes(intervals[i]);
+				log->trace("Interval auf {} gesetzt", intervalStrings[i]);
+			}
+			if (isSelected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
 	}
 }
 
@@ -271,6 +307,8 @@ auto GUI::InitRenderer() -> void {
 	ImVec4 *colors = style.Colors;
 	colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
 	colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
+
+	clear_color = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
 }
 
 auto GUI::Shutdown() -> void {
@@ -377,5 +415,6 @@ auto GUI::LoadFreeImageAsTexture(FIBITMAP *bitmap, i32 &width, i32 &height) -> G
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	FreeImage_Unload(bitmap);
+	FreeImage_Unload(b);
 	return tex;
 }

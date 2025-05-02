@@ -28,21 +28,27 @@ public:
 	auto RemoveWallpaperFolder(const fs::path path) -> void;
 	auto GetWallpaperFolders() const -> const auto & { return mWallpaperFolders; };
 	auto GetWallpaperFolders() -> auto & { return mWallpaperFolders; };
+
 	auto GetPathCount() const -> const auto & { return mPathUseCount; };
 	auto GetCurrentWallpaperPath() const -> const fs::path & { return mCurrentWallpaper; };
+
 	auto SetWallpaper(const fs::path &wallpaperPath) -> void;
 
 	auto GetRandomWallpaper() -> fs::path;
 
 	auto WallpaperChangeThread() -> void;
 
+	auto Serialize() -> void;
+	auto Deserialize() -> void;
+
+	auto SetWallpaperIntervalInMinutes(u32 minutes) -> void { mWallpaperInterval = std::chrono::minutes(minutes); };
+	auto GetWallpaperInterval() const -> const auto & { return mWallpaperInterval; };
+	auto GetWallpaperInterval() -> auto & { return mWallpaperInterval; };
+
 private:
 	auto Update() -> void;
 	auto HandleEvents() -> void;
 	auto HandleCounts(const fs::path &path) -> void;
-
-	auto Serialize() -> void;
-	auto Deserialize() -> void;
 
 	auto SelectWeightedEntry(const fs::path &path) -> fs::path;
 	auto RecursiveSelectEntry(const fs::path &current) -> fs::path;

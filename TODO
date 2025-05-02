@@ -4,6 +4,7 @@ Funktions:
     ✔ Filedialog für Ordner @done(01-05-25)
     ✔ json Serializer @done(02-05-25)
     ✔ Checkboxen für Folder @done(02-05-25)
+    ☐ Wechselfrequenz Settings auf dem Main Window
     ☐ Rechtsklick auf Folder
         ☐ Löschen
         ☐ Bearbeiten -> Neuer FileDialog?
@@ -18,6 +19,10 @@ Funktions:
     ☐ Weight für Oberste Ebene selbst bestimmen
     ☐ n-Bildschirme Hintergründe
     ☐ Bildschirmgrößen rausfinden
+
+UI:
+    ☐ Stil ausdenken
+    ☐ Fenster schmall und non-Resizeable machen
 
 Bugs:
     ☐ Bug: Wenn alle Bilder bilder Blacklisted sind gibts Probleme

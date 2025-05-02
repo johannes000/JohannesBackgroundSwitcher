@@ -72,5 +72,8 @@ private:
 
 	std::atomic<bool> mWallpaperThreadRunning{false};
 	std::thread mWallpaperThread;
+	std::mutex mTimeMutex;
+
 	std::chrono::minutes mWallpaperInterval{5};
+	std::chrono::steady_clock::time_point mLastChange;
 };

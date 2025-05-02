@@ -239,8 +239,11 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 		0,
 		(void *)absolutePath.string().c_str(),
 		SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-	if (ok)
+	if (ok) {
 		mCurrentWallpaper = wallpaperPath;
+		std::lock_guard<std::mutex> lock(mTimeMutex);
+		mLastChange = std::chrono::steady_clock::now();
+	}
 }
 
 auto App::GetRandomWallpaper() -> fs::path {
@@ -279,10 +282,12 @@ auto App::WallpaperChangeThread() -> void {
 	using namespace std::literals;
 	while (mWallpaperThreadRunning) {
 		SetWallpaper(GetRandomWallpaper());
-
-		auto start = std::chrono::steady_clock::now();
+		{
+			std::lock_guard<std::mutex> lock(mTimeMutex);
+			mLastChange = std::chrono::steady_clock::now();
+		}
 		while (mWallpaperThreadRunning &&
-			   std::chrono::steady_clock::now() - start < mWallpaperInterval) {
+			   std::chrono::steady_clock::now() - mLastChange < mWallpaperInterval) {
 			std::this_thread::sleep_for(1s);
 		}
 	}

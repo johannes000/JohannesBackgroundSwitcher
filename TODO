@@ -4,12 +4,12 @@ Funktions:
     ✔ Filedialog für Ordner @done(01-05-25)
     ✔ json Serializer @done(02-05-25)
     ✔ Checkboxen für Folder @done(02-05-25)
-    ☐ Wechselfrequenz Settings auf dem Main Window
+    ✔ Wechselfrequenz Settings auf dem Main Window @done(03-05-25)
     ☐ Rechtsklick auf Folder
         ☐ Löschen
         ☐ Bearbeiten -> Neuer FileDialog?
-    ☐ Tasten Kombo zum wechseln
-    ☐ Ins Tray Minimieren
+    ☐ Tasten Kombo zum wechseln @high 
+    ☐ Ins Tray Minimieren @high 
     ✔ Blacklist für Bilder @done(02-05-25)
     ☐ Settings Fenster
     ☐ Path Blacklist über Settings

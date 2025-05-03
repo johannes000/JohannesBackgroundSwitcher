@@ -272,7 +272,6 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	mWallpaperBlacklist.emplace(wallpaperPath);
 	fs::path outputDir = "./CurrentWallpapers";
 
-	// Ordner erstellen falls nicht vorhanden
 	if (!fs::exists(outputDir)) {
 		fs::create_directory(outputDir);
 	}

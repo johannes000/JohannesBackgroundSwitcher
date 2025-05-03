@@ -49,6 +49,7 @@ private:
 	auto RenderFolderPanel() -> void;
 
 	auto LoadFreeImageAsTexture(FIBITMAP *bitmap, i32 &width, i32 &height) -> GLuint;
+	auto InitImguiStyle() -> void;
 
 private:
 	SDL_Window *mWindow;

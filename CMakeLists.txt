@@ -115,7 +115,7 @@ set(CPM_USE_LOCAL_PACKAGES ON)  # Bessere Wiederverwendung zwischen Builds
 file(GLOB_RECURSE CORE_SOURCES
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/src/*.hpp"
-    ./assets/app_icon.rc
+    "${PROJECT_SOURCE_DIR}/src/app_icon.rc"
 )
 
 

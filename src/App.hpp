@@ -33,8 +33,8 @@ public:
 	auto GetCurrentWallpaperPath() const -> const fs::path & { return mCurrentWallpaper; };
 
 	auto SetWallpaper(const fs::path &wallpaperPath) -> void;
-
 	auto GetRandomWallpaper() -> fs::path;
+	auto SetRandomWallpaper() -> void;
 
 	auto WallpaperChangeThread() -> void;
 

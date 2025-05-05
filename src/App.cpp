@@ -349,6 +349,10 @@ auto App::GetRandomWallpaper() -> fs::path {
 	return "C:/Wallpaper/1.webp";
 }
 
+auto App::SetRandomWallpaper() -> void {
+	SetWallpaper(GetRandomWallpaper());
+}
+
 auto App::WallpaperChangeThread() -> void {
 	using namespace std::literals;
 	while (mWallpaperThreadRunning) {

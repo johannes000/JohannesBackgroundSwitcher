@@ -63,8 +63,7 @@ auto GUI::Render() -> void {
 
 		ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - 200) * 0.5f);
 		if (ImGui::Button("Random Wallpaper", ImVec2(200, 40))) {
-			auto random = mApp->GetRandomWallpaper();
-			mApp->SetWallpaper(random);
+			mApp->SetRandomWallpaper();
 		}
 
 		ImGui::Spacing();
@@ -146,8 +145,7 @@ auto GUI::RenderFolderPanel() -> void {
 	}
 
 	if (ImGui::Button("Manual", ImVec2(buttonWidth * 2 / 3, 0))) {
-		auto wallpaper = mApp->GetRandomWallpaper();
-		mApp->SetWallpaper(wallpaper);
+		mApp->SetRandomWallpaper();
 	}
 
 	ImGui::SameLine();

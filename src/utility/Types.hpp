@@ -19,3 +19,5 @@ typedef double f64;
 
 global const char *APP_NAME = "Wallpapers";
 global const char *USE_COUNT_FILE = "usecount.dat";
+
+#define GLOBAL_WINDOWS_SWITCH_HOTKEY_ID 1

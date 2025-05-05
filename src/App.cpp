@@ -21,6 +21,19 @@ auto GetWeight(i32 count) -> f64 {
 }
 
 auto App::HandleEvents() -> void {
+	// Windows-only Events
+	MSG msg;
+
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		if (msg.message == WM_HOTKEY &&
+			msg.wParam == GLOBAL_WINDOWS_SWITCH_HOTKEY_ID) {
+			SetWallpaper(GetRandomWallpaper());
+		}
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	// SDL Events
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		ImGui_ImplSDL3_ProcessEvent(&event);
@@ -233,6 +246,8 @@ auto App::Shutdown() -> void {
 	mGUI.Shutdown();
 	Serialize();
 	FreeImage_DeInitialise();
+
+	UnregisterHotKey(NULL, GLOBAL_WINDOWS_SWITCH_HOTKEY_ID);
 }
 
 auto App::AddWallpaperFolder(const fs::path path, bool selected) -> void {
@@ -267,6 +282,11 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 		fs::is_directory(wallpaperPath) ||
 		!Util::IsImageFile(wallpaperPath))
 		return;
+	auto now = std::chrono::steady_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - mLastChange);
+	if (duration.count() < 1000)
+		return;
+
 	log->trace("Setze {} als Wallpaper", wallpaperPath.string());
 
 	mWallpaperBlacklist.emplace(wallpaperPath);
@@ -357,4 +377,8 @@ auto App::Init() -> void {
 
 	mWallpaperThreadRunning = true;
 	mWallpaperThread = std::thread(&App::WallpaperChangeThread, this);
+
+	if (RegisterHotKey(NULL, GLOBAL_WINDOWS_SWITCH_HOTKEY_ID, MOD_CONTROL | MOD_ALT, 0x4E)) {
+		log->trace("Windows Global Hotkey Registriert");
+	}
 }

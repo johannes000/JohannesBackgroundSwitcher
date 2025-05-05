@@ -5,10 +5,14 @@ Funktions:
     ✔ json Serializer @done(02-05-25)
     ✔ Checkboxen für Folder @done(02-05-25)
     ✔ Wechselfrequenz Settings auf dem Main Window @done(03-05-25)
+    ☐ Orig Seitenverhältniss beibehalten, Mit Setting Anpassung Aussuchen
+        - Zentrieren
+        - Strecken
+        - Strecken, Blur Hintergrung
     ☐ Rechtsklick auf Folder
         ☐ Löschen
         ☐ Bearbeiten -> Neuer FileDialog?
-    ☐ Tasten Kombo zum wechseln @high 
+    ✔ Tasten Kombo zum wechseln @high @done(05-05-25)
     ☐ Ins Tray Minimieren @high 
     ✔ Blacklist für Bilder @done(02-05-25)
     ☐ Settings Fenster

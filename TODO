@@ -5,7 +5,7 @@ Funktions:
     ✔ json Serializer @done(02-05-25)
     ✔ Checkboxen für Folder @done(02-05-25)
     ✔ Wechselfrequenz Settings auf dem Main Window @done(03-05-25)
-    ☐ Orig Seitenverhältniss beibehalten, Mit Setting Anpassung Aussuchen
+    ☐ Wallpaper Orig Seitenverhältniss beibehalten, Mit Setting Anpassung Aussuchen
         - Zentrieren
         - Strecken
         - Strecken, Blur Hintergrung
@@ -15,10 +15,12 @@ Funktions:
     ✔ Tasten Kombo zum wechseln @high @done(05-05-25)
     ☐ Ins Tray Minimieren @high 
     ✔ Blacklist für Bilder @done(02-05-25)
+    ☐ Wallpaper History
+    ☐ Auf vorherige Wallper umschalten
     ☐ Settings Fenster
     ☐ Path Blacklist über Settings
     ☐ Oben rechts im Bild den Namen printen
-    ☐ Wenn Prog schon an ist zur ersten Instanz switchen
+    ☐ Wenn Prog schon offen ist zur main Instanz switchen
     ☐ Unittests
     ☐ Weight für Oberste Ebene selbst bestimmen
     ☐ n-Bildschirme Hintergründe
@@ -26,7 +28,7 @@ Funktions:
 
 UI:
     ☐ Stil ausdenken
-    ☐ Fenster schmall und non-Resizeable machen
+    ✔ Fenster schmall und non-Resizeable machen @done(19-05-25)
 
 Bugs:
     ☐ Bug: Wenn alle Bilder bilder Blacklisted sind gibts Probleme

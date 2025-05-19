@@ -1,4 +1,5 @@
 #pragma once
+
 #include "utility/Includes.hpp"
 #include "GUI.hpp"
 
@@ -57,6 +58,8 @@ private:
 
 	auto SelectWeightedEntry(const fs::path &path) -> fs::path;
 	auto RecursiveSelectEntry(const fs::path &current) -> fs::path;
+
+	auto GenerateTextBitmap(const std::string text) -> void;
 
 	auto FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path path) -> bool;
 

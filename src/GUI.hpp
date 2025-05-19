@@ -46,10 +46,12 @@ private:
 	auto EndFrame() -> void;
 
 	auto RenderDemoWindows() -> void;
-	auto RenderFolderPanel() -> void;
+	auto RenderMainWindow() -> void;
 
-	auto LoadFreeImageAsTexture(FIBITMAP *bitmap, i32 &width, i32 &height) -> GLuint;
 	auto InitImguiStyle() -> void;
+
+	auto UpdateWallpaperTexture() -> void;
+	auto LoadFreeImageAsTexture(const fs::path &wallpaperPath) -> GLuint;
 
 private:
 	SDL_Window *mWindow;

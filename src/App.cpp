@@ -1,5 +1,7 @@
+
 // TODO: Platform Stuff
 #include <Windows.h>
+#include <gdiplus.h>
 #include "App.hpp"
 #include "utility/Serializer.hpp"
 #include "nlohmann/json.hpp"
@@ -12,6 +14,7 @@ constexpr f64 PI = 3.14159265358979323846;
 constexpr const char *statsPath = "./stats.json";
 constexpr const char *settingsPath = "./settings.json";
 constexpr const char *defaultSettingsPath = "./default_settings.json";
+constexpr const char *ttfFilePath = "./assets/font/Lato-Regular.ttf";
 } // namespace
 
 auto GetWeight(i32 count) -> f64 {
@@ -191,11 +194,9 @@ auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
 }
 
 auto App::RecursiveSelectEntry(const fs::path &current) -> fs::path {
-
 	if (!fs::exists(current))
 		return {};
 	if (Util::IsImageFile(current))
-		// TODO: Blacklist
 		return current;
 	if (!fs::is_directory(current))
 		return {};
@@ -208,6 +209,10 @@ auto App::RecursiveSelectEntry(const fs::path &current) -> fs::path {
 		return {};
 	}
 	return RecursiveSelectEntry(selected);
+}
+
+auto App::GenerateTextBitmap(const std::string text) -> void {
+	// Windows only
 }
 
 auto App::FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path path) -> bool {
@@ -299,6 +304,12 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	auto bitmap = Util::LoadImage(wallpaperPath);
 	if (FreeImage_GetWidth(bitmap) != 1920)
 		bitmap = FreeImage_Rescale(bitmap, 1920, 1080);
+	if (!bitmap) {
+		FreeImage_Unload(bitmap);
+		bitmap = Util::LoadImage(outputDir / "default.bmp");
+	}
+	if (!bitmap)
+		return;
 
 	fs::path temp = outputDir / "1.bmp";
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
@@ -356,7 +367,7 @@ auto App::SetRandomWallpaper() -> void {
 auto App::WallpaperChangeThread() -> void {
 	using namespace std::literals;
 	while (mWallpaperThreadRunning) {
-		SetWallpaper(GetRandomWallpaper());
+		SetRandomWallpaper();
 		{
 			std::lock_guard<std::mutex> lock(mTimeMutex);
 			mLastChange = std::chrono::steady_clock::now();

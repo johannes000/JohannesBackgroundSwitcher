@@ -128,6 +128,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
     ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
     ${CPM_PACKAGE_nlohmann-json_SOURCE_DIR}/include
+    ${CPM_PACKAGE_WinFontRender_SOURCE_DIR}
 )
 
 # Link-Bibliotheken
@@ -176,4 +177,21 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     RUNTIME DESTINATION bin
     BUNDLE DESTINATION bin
   )
+endif()
+
+add_custom_command(
+  TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/assets
+    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets
+  COMMENT "Copying assets to output directory"
+  VERBATIM
+)
+
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if(MSVC)
+        target_link_options(${PROJECT_NAME} PRIVATE "/SUBSYSTEM:WINDOWS")
+    elseif(MINGW)
+        target_link_options(${PROJECT_NAME} PRIVATE "-mwindows")
+    endif()
 endif()

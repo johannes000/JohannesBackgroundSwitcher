@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose build type" FORCE)
 endif()
@@ -17,6 +20,13 @@ message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
 # Abhängigkeiten
 include(cmake/CPM.cmake)
 include(cmake/warnings.cmake)
+
+CPMAddPackage(
+  NAME googletest
+  GITHUB_REPOSITORY google/googletest
+  VERSION 1.14.0
+  OPTIONS "INSTALL_GTEST OFF"
+)
 
 CPMAddPackage(
   NAME SDL
@@ -95,18 +105,11 @@ include_directories(imgui INTERFACE
 target_compile_definitions(imgui PUBLIC -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS) # optional imgui setting
 set_target_properties(imgui PROPERTIES FOLDER third-party) # optoinal IDE dir
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/Debug")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/Debug")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin/Debug")
-
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin/Release")
-
 # Für Multi-Config Generatoren (Visual Studio, Xcode)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+# set(TEST_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 
 # CPM Konfiguration für Debug/Release builds
 set(CPM_USE_LOCAL_PACKAGES ON)  # Bessere Wiederverwendung zwischen Builds
@@ -128,7 +131,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
     ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
     ${CPM_PACKAGE_nlohmann-json_SOURCE_DIR}/include
-    ${CPM_PACKAGE_WinFontRender_SOURCE_DIR}
+    ${CPM_PACKAGE_spdlog_SOURCE_DIR}/include
 )
 
 # Link-Bibliotheken
@@ -153,13 +156,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE FREEIMAGE_LIB)
 #     COMMENT "Copying assets folder"
 # )
 
-
-# Debug/Release-Konfiguration
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>)
-target_compile_options(${PROJECT_NAME} PRIVATE
-    $<$<CONFIG:Debug>:-g -O0>
-    $<$<CONFIG:Release>:-O3 -DNDEBUG>
-)
 
 if(SDL_ADDED)
   if(WIN32 AND SDL_SHARED)
@@ -195,3 +191,5 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         target_link_options(${PROJECT_NAME} PRIVATE "-mwindows")
     endif()
 endif()
+
+add_subdirectory(test)

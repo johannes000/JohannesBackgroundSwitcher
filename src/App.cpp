@@ -2,9 +2,11 @@
 // TODO: Platform Stuff
 #include <Windows.h>
 #include <gdiplus.h>
+
 #include "App.hpp"
-#include "utility/Serializer.hpp"
 #include "nlohmann/json.hpp"
+#include "utility/Serializer.hpp"
+
 
 namespace {
 i32 maxSelectionCount = 10;
@@ -211,7 +213,7 @@ auto App::RecursiveSelectEntry(const fs::path &current) -> fs::path {
 	return RecursiveSelectEntry(selected);
 }
 
-auto App::GenerateTextBitmap(const std::string text) -> void {
+auto App::GenerateTextBitmap(const std::string /* text */) -> void {
 	// Windows only
 }
 

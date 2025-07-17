@@ -1,21 +1,19 @@
-#include <windows.h>
 #include "App.hpp"
+#include <windows.h>
 
 auto main(int, char **) -> i32 {
 	try {
-		// Anwendung initialisieren und starten
 		App app;
 		app.Init();
 		app.Run();
 		app.Shutdown();
 
-		return EXIT_SUCCESS;
+		return 0;
 	} catch (const std::exception &e) {
 		spdlog::critical("Fehler: {}", e.what());
-		return EXIT_FAILURE;
+		return 1;
 	} catch (...) {
 		spdlog::critical("Unbekannter Fehler");
-
-		return EXIT_FAILURE;
+		return 1;
 	}
 }

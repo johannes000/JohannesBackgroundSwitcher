@@ -1,14 +1,14 @@
 #pragma once
 
+#include <format>
 #include <iostream>
 #include <map>
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 #include <vector>
-#include <format>
 
 #include <spdlog/spdlog.h>
 
-#include "Types.hpp"
-#include "Logger.hpp"
 #include "Helper.hpp"
+#include "Logger.hpp"
+#include "Types.hpp"

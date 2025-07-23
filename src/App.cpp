@@ -7,7 +7,6 @@
 #include "nlohmann/json.hpp"
 #include "utility/Serializer.hpp"
 
-
 namespace {
 i32 maxSelectionCount = 10;
 
@@ -251,7 +250,6 @@ auto App::Shutdown() -> void {
 	}
 
 	mGUI.Shutdown();
-	Serialize();
 	FreeImage_DeInitialise();
 
 	UnregisterHotKey(NULL, GLOBAL_WINDOWS_SWITCH_HOTKEY_ID);
@@ -387,8 +385,6 @@ auto App::Init() -> void {
 	FreeImage_Initialise();
 
 	mRunning = true;
-
-	Deserialize();
 
 	mGen = std::mt19937(std::random_device{}());
 

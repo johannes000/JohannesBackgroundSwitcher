@@ -22,13 +22,6 @@ include(cmake/CPM.cmake)
 include(cmake/warnings.cmake)
 
 CPMAddPackage(
-  NAME googletest
-  GITHUB_REPOSITORY google/googletest
-  VERSION 1.14.0
-  OPTIONS "INSTALL_GTEST OFF"
-)
-
-CPMAddPackage(
   NAME SDL
   GITHUB_REPOSITORY libsdl-org/SDL
   GIT_TAG release-3.2.8
@@ -192,4 +185,3 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     endif()
 endif()
 
-add_subdirectory(test)

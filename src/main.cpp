@@ -5,7 +5,9 @@ auto main(int, char **) -> i32 {
 	try {
 		App app;
 		app.Init();
+		app.Deserialize();
 		app.Run();
+		app.Serialize();
 		app.Shutdown();
 
 		return 0;

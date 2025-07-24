@@ -149,6 +149,7 @@ auto GUI::RenderMainWindow() -> void {
 			lastWallpaper = currentWallpaper;
 		}
 		if (mCurrentWallpaper.texture != 0) {
+			// Current Wallpaper Filename Text
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
 			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
@@ -158,7 +159,18 @@ auto GUI::RenderMainWindow() -> void {
 			}
 			ImGui::PopStyleColor(2);
 			ImGui::PopStyleVar();
+			ImGui::SameLine();
 
+			// Remaining Time Text
+			auto remainingTime = mApp->GetRemainingWallpaperIntervalTimeInS();
+			if (remainingTime > 60 * 60)
+				ImGui::Text("%dh:%dm:%ds", remainingTime / 60 / 60, (remainingTime / 60) % 60, remainingTime % 60);
+			if (remainingTime > 60)
+				ImGui::Text("%dm:%ds", remainingTime / 60, remainingTime % 60);
+			else
+				ImGui::Text("%ds", remainingTime);
+
+			// Current Wallpaper Preview
 			ImVec2 availSize = ImGui::GetContentRegionAvail();
 			f32 ratio = (f32)mCurrentWallpaper.width / (f32)mCurrentWallpaper.height;
 			f32 displayHeight = availSize.y;

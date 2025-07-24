@@ -1,10 +1,10 @@
 #pragma once
 
-#include "utility/Includes.hpp"
 #include "GUI.hpp"
+#include "utility/Includes.hpp"
 
-#include <random>
 #include <chrono>
+#include <random>
 #include <unordered_set>
 
 struct WallpaperFolder {
@@ -37,8 +37,6 @@ public:
 	auto GetRandomWallpaper() -> fs::path;
 	auto SetRandomWallpaper() -> void;
 
-	auto WallpaperChangeThread() -> void;
-
 	auto Serialize() -> void;
 	auto SerializeStats() -> void;
 	auto SerializeSettings() -> void;
@@ -48,8 +46,10 @@ public:
 	auto DeserializeSettings() -> void;
 
 	auto SetWallpaperIntervalInMinutes(u32 minutes) -> void { mWallpaperInterval = std::chrono::minutes(minutes); };
+	auto SetWallpaperIntervalInSeconds(u32 seconds) -> void { mWallpaperInterval = std::chrono::minutes(seconds / 60); };
 	auto GetWallpaperInterval() const -> const auto & { return mWallpaperInterval; };
 	auto GetWallpaperInterval() -> auto & { return mWallpaperInterval; };
+	auto GetRemainingWallpaperIntervalTimeInS() const -> i32;
 
 private:
 	auto Update() -> void;
@@ -77,10 +77,6 @@ private:
 
 	LogPtr log = AddLogger("APP");
 	bool mRunning{true};
-
-	std::atomic<bool> mWallpaperThreadRunning{false};
-	std::thread mWallpaperThread;
-	std::mutex mTimeMutex;
 
 	std::chrono::minutes mWallpaperInterval{5};
 	std::chrono::steady_clock::time_point mLastChange;

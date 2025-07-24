@@ -169,6 +169,11 @@ auto App::DeserializeSettings() -> void {
 	log->trace("Settings erfolgreich geladen");
 }
 
+auto App::GetRemainingWallpaperIntervalTimeInS() const -> i32 {
+	return std::chrono::duration_cast<std::chrono::seconds>(mWallpaperInterval).count() -
+		   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - mLastChange).count();
+}
+
 auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
 	std::vector<fs::path> candidates;
 	std::vector<f64> weights;
@@ -226,6 +231,11 @@ auto App::FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path 
 }
 
 auto App::Update() -> void {
+	if (std::chrono::steady_clock::now() - mLastChange > mWallpaperInterval) {
+		SetRandomWallpaper();
+		mLastChange = std::chrono::steady_clock::now();
+	}
+
 	mGUI.Update();
 }
 
@@ -242,13 +252,6 @@ auto App::Run() -> void {
 }
 
 auto App::Shutdown() -> void {
-	if (mWallpaperThreadRunning) {
-		mWallpaperThreadRunning = false;
-		if (mWallpaperThread.joinable()) {
-			mWallpaperThread.join();
-		}
-	}
-
 	mGUI.Shutdown();
 	FreeImage_DeInitialise();
 
@@ -323,8 +326,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 		SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 	if (ok) {
 		mCurrentWallpaper = wallpaperPath;
-		std::lock_guard<std::mutex> lock(mTimeMutex);
-		mLastChange = std::chrono::steady_clock::now();
+		mLastChange = now;
 	}
 }
 
@@ -364,21 +366,6 @@ auto App::SetRandomWallpaper() -> void {
 	SetWallpaper(GetRandomWallpaper());
 }
 
-auto App::WallpaperChangeThread() -> void {
-	using namespace std::literals;
-	while (mWallpaperThreadRunning) {
-		SetRandomWallpaper();
-		{
-			std::lock_guard<std::mutex> lock(mTimeMutex);
-			mLastChange = std::chrono::steady_clock::now();
-		}
-		while (mWallpaperThreadRunning &&
-			   std::chrono::steady_clock::now() - mLastChange < mWallpaperInterval) {
-			std::this_thread::sleep_for(1s);
-		}
-	}
-}
-
 auto App::Init() -> void {
 	mGUI.Init(this);
 
@@ -387,9 +374,6 @@ auto App::Init() -> void {
 	mRunning = true;
 
 	mGen = std::mt19937(std::random_device{}());
-
-	mWallpaperThreadRunning = true;
-	mWallpaperThread = std::thread(&App::WallpaperChangeThread, this);
 
 	if (RegisterHotKey(NULL, GLOBAL_WINDOWS_SWITCH_HOTKEY_ID, MOD_CONTROL | MOD_ALT, 0x4E)) {
 		log->trace("Windows Global Hotkey Registriert");

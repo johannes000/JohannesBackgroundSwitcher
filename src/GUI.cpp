@@ -10,7 +10,7 @@ bool show_demo_window = false;
 bool show_another_window = false;
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-i32 WindowWidth = 400;
+i32 WindowWidth = 700;
 i32 WindowHeight = 720;
 
 constexpr f32 FOLDERPANEL_SIZE_FAKTOR = 1.f / 3.f;
@@ -92,8 +92,10 @@ auto GUI::RenderMainWindow() -> void {
 				 ImGuiWindowFlags_HorizontalScrollbar |
 					 ImGuiWindowFlags_NoDecoration);
 	{
+		f32 buttonRegionWidth = ImGui::GetContentRegionAvail().x;
+		f32 buttonRegionButtonWidth = buttonRegionWidth - ImGui::GetStyle().WindowPadding.x;
 		ImGui::BeginDisabled(mIsFileDialogOpen);
-		if (ImGui::Button("+", ImVec2(buttonWidth, 0)) && !mIsFileDialogOpen) {
+		if (ImGui::Button("+", ImVec2(buttonRegionButtonWidth, 0)) && !mIsFileDialogOpen) {
 			mIsFileDialogOpen = true;
 			mFolderFuture = std::async(std::launch::async, []() {
 				fs::path returnPath;
@@ -111,11 +113,10 @@ auto GUI::RenderMainWindow() -> void {
 				log->warn("Fehler beim Filedialog: ", NFD::GetError());
 			else {
 				mApp->AddWallpaperFolder(path);
-				mApp->Serialize();
 			}
 			mIsFileDialogOpen = false;
 		}
-		if (ImGui::Button("Manual", ImVec2(buttonWidth * 2 / 3, 0))) {
+		if (ImGui::Button("Manual", ImVec2(buttonRegionButtonWidth * 2 / 3, 0))) {
 			mApp->SetRandomWallpaper();
 		}
 
@@ -128,7 +129,7 @@ auto GUI::RenderMainWindow() -> void {
 				break;
 			}
 		}
-		f32 dropdownWidth = buttonWidth * 1 / 3 - ImGui::GetStyle().WindowPadding.x;
+		f32 dropdownWidth = buttonRegionButtonWidth * 1 / 3 - ImGui::GetStyle().WindowPadding.x;
 
 		if (ImGui::BeginCombo("##SelectInterval", intervalStrings[currentInterval], ImGuiComboFlags_NoArrowButton)) {
 			for (size_t i = 0; i < intervals.size(); i++) {

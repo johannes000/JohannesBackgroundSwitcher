@@ -59,11 +59,12 @@ add_executable(${PROJECT_NAME} ${PLATFORM_SOURCES} ${CORE_SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}src/
     ${PROJECT_SOURCE_DIR}/extern/include
+    ${CPM_PACKAGE_cereal_SOURCE_DIR}/include
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
     ${CPM_PACKAGE_imgui_SOURCE_DIR}
+    ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
     ${CPM_PACKAGE_SDL_SOURCE_DIR}/include
     ${CPM_PACKAGE_spdlog_SOURCE_DIR}/include
-    ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

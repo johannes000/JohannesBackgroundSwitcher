@@ -51,28 +51,6 @@ auto App::HandleCounts(const fs::path &path) -> void {
 	++mPathUseCount[path];
 }
 
-auto App::Serialize() -> void {
-	SerializeSettings();
-	SerializeStats();
-}
-
-auto App::SerializeStats() -> void {
-}
-
-auto App::SerializeSettings() -> void {
-}
-
-auto App::Deserialize() -> void {
-	DeserializeStats();
-	DeserializeSettings();
-}
-
-auto App::DeserializeStats() -> void {
-}
-
-auto App::DeserializeSettings() -> void {
-}
-
 auto App::GetRemainingWallpaperIntervalTimeInS() const -> i32 {
 	return std::chrono::duration_cast<std::chrono::seconds>(mWallpaperInterval).count() -
 		   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - mLastChange).count();

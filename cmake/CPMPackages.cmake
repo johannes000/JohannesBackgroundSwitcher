@@ -21,6 +21,13 @@ CPMAddPackage(
 )
 
 CPMAddPackage(
+  NAME cereal
+  GITHUB_REPOSITORY USCiLab/cereal
+  GIT_TAG v1.3.2
+  DOWNLOAD_ONLY ON
+)
+
+CPMAddPackage(
     NAME nativefiledialog-extended
     GITHUB_REPOSITORY btzy/nativefiledialog-extended
     GIT_TAG v1.2.1

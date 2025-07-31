@@ -1,13 +1,28 @@
+#include <fstream>
+
 #include "App.hpp"
+#include <cereal/archives/binary.hpp>
 #include <windows.h>
 
 auto main(int, char **) -> i32 {
 	try {
+
 		App app;
+
 		app.Init();
-		app.Deserialize();
+		if (std::ifstream is("data.knaub", std::ios::binary); is.good()) {
+			cereal::BinaryInputArchive archive(is);
+			archive(app);
+		}
+
 		app.Run();
-		app.Serialize();
+
+		{
+			std::ofstream os("data.knaub", std::ios::binary);
+			cereal::BinaryOutputArchive archive(os);
+			archive(app);
+		}
+
 		app.Shutdown();
 
 		return 0;

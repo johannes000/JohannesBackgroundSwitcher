@@ -3,13 +3,37 @@
 #include "GUI.hpp"
 #include "utility/Includes.hpp"
 
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/chrono.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/unordered_set.hpp>
+#include <cereal/types/vector.hpp>
+
+
 #include <chrono>
 #include <random>
 #include <unordered_set>
 
+namespace cereal {
+template <class Archive>
+void serialize(Archive &archive, fs::path &path) {
+	std::string path_str = path.string();
+	archive(path_str);
+	path = fs::path(path_str);
+}
+} // namespace cereal
+
 struct WallpaperFolder {
 	fs::path path;
 	bool selected{true};
+
+	template <class Archive>
+	auto serialize(Archive &archive) -> void {
+		archive(
+			path,
+			selected);
+	};
 };
 
 class App {
@@ -37,19 +61,24 @@ public:
 	auto GetRandomWallpaper() -> fs::path;
 	auto SetRandomWallpaper() -> void;
 
-	auto Serialize() -> void;
-	auto SerializeStats() -> void;
-	auto SerializeSettings() -> void;
-
-	auto Deserialize() -> void;
-	auto DeserializeStats() -> void;
-	auto DeserializeSettings() -> void;
-
 	auto SetWallpaperIntervalInMinutes(u32 minutes) -> void { mWallpaperInterval = std::chrono::minutes(minutes); };
 	auto SetWallpaperIntervalInSeconds(u32 seconds) -> void { mWallpaperInterval = std::chrono::minutes(seconds / 60); };
 	auto GetWallpaperInterval() const -> const auto & { return mWallpaperInterval; };
 	auto GetWallpaperInterval() -> auto & { return mWallpaperInterval; };
 	auto GetRemainingWallpaperIntervalTimeInS() const -> i32;
+
+public:
+	template <class Archive>
+	auto serialize(Archive &archive) -> void {
+		archive(
+			mWallpaperFolders,
+			mPathUseCount,
+			mWallpaperBlacklist,
+			mFolderBlacklist,
+			mCurrentWallpaper,
+			mWallpaperInterval,
+			mLastChange);
+	}
 
 private:
 	auto Update() -> void;

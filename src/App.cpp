@@ -4,8 +4,7 @@
 #include <gdiplus.h>
 
 #include "App.hpp"
-#include "nlohmann/json.hpp"
-#include "utility/Serializer.hpp"
+#include <SDL3/SDL.h>
 
 namespace {
 i32 maxSelectionCount = 10;
@@ -58,43 +57,9 @@ auto App::Serialize() -> void {
 }
 
 auto App::SerializeStats() -> void {
-	using json = nlohmann::json;
-	json data;
-
-	data["Wallpaper Folders"] = json::array();
-	for (const auto &[path, selected] : mWallpaperFolders) {
-		data["Wallpaper Folders"].push_back(
-			{{"path", path},
-			 {"selected", selected}});
-	}
-
-	data["Path Count"] = json::object();
-	for (const auto &[path, count] : mPathUseCount) {
-		data["Path Count"][path.string()] = count;
-	}
-
-	// data["Wallpaper Blacklist"] = json::array();
-	// for (const auto &path : mWallpaperBlacklist) {
-	// 	data["Wallpaper Blacklist"].push_back(path.string());
-	// }
-
-	data["Folder Blacklist"] = json::array();
-	for (const auto &path : mFolderBlacklist) {
-		data["Folder Blacklist"].push_back(path.string());
-	}
-
-	std::ofstream file(statsPath);
-	file << data.dump(4);
 }
 
 auto App::SerializeSettings() -> void {
-	using json = nlohmann::json;
-
-	json data;
-	data["Interval"] = mWallpaperInterval.count();
-
-	std::ofstream file(settingsPath);
-	file << data.dump(4);
 }
 
 auto App::Deserialize() -> void {
@@ -103,70 +68,9 @@ auto App::Deserialize() -> void {
 }
 
 auto App::DeserializeStats() -> void {
-	if (!fs::exists(fs::path(statsPath)))
-		return;
-
-	try {
-		std::ifstream file(statsPath);
-
-		using json = nlohmann::json;
-		json data = json::parse(file);
-
-		if (data.contains("Wallpaper Folders")) {
-			for (const auto &folder : data["Wallpaper Folders"]) {
-				fs::path path = folder["path"].get<std::string>();
-				bool selected = folder.value("selected", true);
-				AddWallpaperFolder(path, selected);
-			}
-		}
-
-		if (data.contains("Path Count")) {
-			for (const auto &[path, count] : data["Path Count"].items()) {
-				mPathUseCount[fs::path(path)] = count.get<i32>();
-			}
-		}
-
-		if (data.contains("Wallpaper Blacklist")) {
-			for (const auto &pathStr : data["Wallpaper Blacklist"]) {
-				mWallpaperBlacklist.emplace(fs::path(pathStr.get<std::string>()));
-			}
-		}
-
-		if (data.contains("Folder Blacklist")) {
-			for (const auto &pathStr : data["Folder Blacklist"]) {
-				mFolderBlacklist.emplace(fs::path(pathStr.get<std::string>()));
-			}
-		}
-	} catch (const std::exception &e) {
-		log->warn("Fehler beim Laden der Settings: {}", e.what());
-		return;
-	}
 }
 
 auto App::DeserializeSettings() -> void {
-	using json = nlohmann::json;
-
-	std::string path = settingsPath;
-	if (!fs::exists(path))
-		path = defaultSettingsPath;
-	if (!fs::exists(path)) {
-		log->warn("Konnte keine Settings Laden. Viel Glück!");
-		return;
-	}
-
-	try {
-
-		std::ifstream file(path);
-		json data = json::parse(file);
-
-		if (data.contains("Interval")) {
-			mWallpaperInterval = std::chrono::minutes(data["Interval"].get<i32>());
-		}
-	} catch (const std::exception &e) {
-		log->warn("Fehler beim Laden der Settings: {}", e.what());
-		return;
-	}
-	log->trace("Settings erfolgreich geladen");
 }
 
 auto App::GetRemainingWallpaperIntervalTimeInS() const -> i32 {
@@ -313,6 +217,8 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	}
 	if (!bitmap)
 		return;
+
+	mGUI.RenderTextInBitmap(bitmap, "ASDHASDOH");
 
 	fs::path temp = outputDir / "1.bmp";
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());

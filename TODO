@@ -1,4 +1,7 @@
 Funktions:
+    ☐ Filedialog @high
+    ☐ cereal @high
+    ☐ Main Loop ins main.cpp verlagern @high
     ✔ Hintergrund Einstellen @done(01-05-25)
     ✔ Timer für Hintergrund Wechseln @done(01-05-25)
     ✔ Filedialog für Ordner @done(01-05-25)

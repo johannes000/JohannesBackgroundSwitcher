@@ -1,7 +1,7 @@
 #include "GUI.hpp"
 
 #include "App.hpp"
-#include "nfd.hpp"
+#include "Platform.hpp"
 
 #include <functional>
 
@@ -17,6 +17,9 @@ constexpr f32 FOLDERPANEL_SIZE_FAKTOR = 1.f / 3.f;
 
 constexpr std::array<i32, 10> intervals{1, 2, 5, 10, 30, 1 * 60, 2 * 60, 5 * 60, 10 * 60, 24 * 60};
 constexpr std::array<const char *, 10> intervalStrings{"1 min", "2 min", "5 min", "10 min", "30 min", "1 hour", "2 hours", "5 hours", "10 hours", "24 hours"};
+
+const fs::path TTFFontPath = "./assets/font/Lato-Regular.ttf";
+constexpr f32 TTFFontSize = 20.f;
 } // namespace
 
 auto GUI::HandleEvents() -> void {
@@ -59,6 +62,9 @@ auto GUI::Render() -> void {
 	EndFrame();
 }
 
+auto GUI::RenderTextInBitmap(FIBITMAP * /* bitmap */, const std::string /* text */) -> void {
+}
+
 auto RenderFolderPathText(WallpaperFolder &folder) -> void {
 	ImGui::Checkbox(folder.path.string().c_str(), &folder.selected);
 	// for (const auto &pic : folder.picturePaths) {
@@ -89,10 +95,7 @@ auto GUI::RenderMainWindow() -> void {
 		if (ImGui::Button("+", ImVec2(buttonWidth, 0)) && !mIsFileDialogOpen) {
 			mIsFileDialogOpen = true;
 			mFolderFuture = std::async(std::launch::async, []() {
-				fs::path returnPath;
-				NFD::UniquePath path;
-				nfdresult_t result = NFD::PickFolder(path, "C:\\Wallpaper");
-				return (result == NFD_OKAY) ? fs::path(path.get()) : fs::path("");
+				return Platform::OpenFileDialogue();
 			});
 		}
 
@@ -100,7 +103,7 @@ auto GUI::RenderMainWindow() -> void {
 		if (mIsFileDialogOpen && mFolderFuture.valid() && mFolderFuture.wait_for(0s) == std::future_status::ready) {
 			fs::path path = mFolderFuture.get();
 			if (path.empty())
-				log->warn("Fehler beim Filedialog: ", NFD::GetError());
+				log->warn("Fehler beim Filedialog");
 			else {
 				mApp->AddWallpaperFolder(path);
 				mApp->Serialize();
@@ -302,7 +305,6 @@ auto GUI::InitRenderer() -> void {
 }
 
 auto GUI::Shutdown() -> void {
-	NFD::Quit();
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL3_Shutdown();
@@ -316,7 +318,6 @@ auto GUI::Shutdown() -> void {
 auto GUI::Init(App *app) -> void {
 	mApp = app;
 	InitRenderer();
-	NFD::Init();
 }
 
 auto GUI::EndFrame() -> void {

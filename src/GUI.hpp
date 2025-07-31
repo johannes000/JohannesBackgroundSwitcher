@@ -1,19 +1,22 @@
 #pragma once
-#include "utility\Includes.hpp"
 #include "FreeImage.h"
+#include "utility\Includes.hpp"
 
 #include <future>
 
 #include "imgui.h"
-#include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl3.h"
+#include <SDL3\SDL.h>
 #include <stdio.h>
-#include <SDL3/SDL.h>
+
+
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL3/SDL_opengles2.h>
 #else
 #include <SDL3/SDL_opengl.h>
 #endif
+
 class App;
 
 struct TextureData {
@@ -36,6 +39,8 @@ public:
 	auto HandleEvents() -> void;
 	auto Update() -> void;
 	auto Render() -> void;
+
+	auto RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void;
 
 	auto GetWindow() -> SDL_Window * { return mWindow; }
 	auto GetGLContext() -> SDL_GLContext * { return &mGLContext; }

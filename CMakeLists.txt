@@ -13,13 +13,24 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-g3 -O0)  # Für GCC/Clang
+    if(MSVC)
+        add_compile_options(/Zi /Od)  # Für Visual Studio
+    endif()
+endif()
+
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE)
 
 message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 # Abhängigkeiten
-include(cmake/CPM.cmake)
 include(cmake/warnings.cmake)
+
+include(FetchContent)
+include(cmake/CPM.cmake)
+include(cmake/imgui.cmake)
+include(cmake/freeimage.cmake)
 
 CPMAddPackage(
   NAME SDL
@@ -28,35 +39,6 @@ CPMAddPackage(
   OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF"
 )
 
-CPMAddPackage(
-  NAME FreeImage
-  GITHUB_REPOSITORY danoli3/FreeImage
-  GIT_TAG 3.19.10
-  OPTIONS
-    "FREEIMAGE_BUILD_ZLIB TRUE"
-    "FREEIMAGE_BUILD_JPEG TRUE"
-    "FREEIMAGE_BUILD_PNG TRUE"
-    "FREEIMAGE_BUILD_STATIC TRUE"
-)
-
-CPMAddPackage(
-    NAME nativefiledialog-extended
-    GITHUB_REPOSITORY btzy/nativefiledialog-extended
-    GIT_TAG v1.2.1
-    OPTIONS
-        "NFD_BUILD_TESTS OFF" 
-        "NFD_PORTAL OFF" 
-)
-
-CPMAddPackage(
-  NAME nlohmann-json
-  VERSION 3.12.0 
-  GITHUB_REPOSITORY nlohmann/json
-  OPTIONS
-    "JSON_BuildTests OFF" 
-    "JSON_MultipleHeaders OFF"
-    "JSON_Install OFF" 
-)
 
 CPMAddPackage(
   NAME spdlog
@@ -66,37 +48,15 @@ CPMAddPackage(
 )
 
 CPMAddPackage(
-  NAME imgui
-  GITHUB_REPOSITORY ocornut/imgui
-  GIT_TAG v1.91.9b-docking
-)
-
-CPMAddPackage(
   NAME glew
   GITHUB_REPOSITORY nigels-com/glew
   GIT_TAG glew-2.2.0
 )
 
-include(FetchContent)
+set(LIB_OUTPUT_DIR ${CMAKE_BINARY_DIR}/extern/lib)
 
-add_library(imgui STATIC
-  ${imgui_SOURCE_DIR}/imgui.cpp
-  ${imgui_SOURCE_DIR}/imgui_demo.cpp # optionally comment this out
-  ${imgui_SOURCE_DIR}/imgui_draw.cpp
-  ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-  ${imgui_SOURCE_DIR}/imgui_tables.cpp
-  ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
-  ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-)
+# Installationsregel für DLLs
 
-include_directories(imgui INTERFACE
-  ${imgui_SOURCE_DIR}
-  ${imgui_SOURCE_DIR}/backends
-  ${SDL_SOURCE_DIR}/include
-)
-
-target_compile_definitions(imgui PUBLIC -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS) # optional imgui setting
-set_target_properties(imgui PROPERTIES FOLDER third-party) # optoinal IDE dir
 
 # Für Multi-Config Generatoren (Visual Studio, Xcode)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
@@ -104,41 +64,40 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 # set(TEST_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 
-# CPM Konfiguration für Debug/Release builds
 set(CPM_USE_LOCAL_PACKAGES ON)  # Bessere Wiederverwendung zwischen Builds
 
-# Alle .cpp- und .hpp-Dateien rekursiv suchen
 file(GLOB_RECURSE CORE_SOURCES
-    "${PROJECT_SOURCE_DIR}/src/*.cpp"
-    "${PROJECT_SOURCE_DIR}/src/*.hpp"
-    "${PROJECT_SOURCE_DIR}/src/app_icon.rc"
+    src/*.cpp
+    src/*.hpp
+    src/app_icon.rc
 )
 
 
-# Executable erstellen
 add_executable(${PROJECT_NAME} ${PLATFORM_SOURCES} ${CORE_SOURCES})
 
-# Include-Verzeichnisse
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}src/
+    ${PROJECT_SOURCE_DIR}/extern/include
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
-    ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
-    ${CPM_PACKAGE_nlohmann-json_SOURCE_DIR}/include
+    ${CPM_PACKAGE_imgui_SOURCE_DIR}
+    ${CPM_PACKAGE_SDL_SOURCE_DIR}/include
     ${CPM_PACKAGE_spdlog_SOURCE_DIR}/include
 )
 
-# Link-Bibliotheken
 target_link_libraries(${PROJECT_NAME} PRIVATE
     $<$<PLATFORM_ID:Windows>:user32>
     imgui
     opengl32
     SDL3::SDL3
     spdlog::spdlog
-    nlohmann_json::nlohmann_json
     FreeImage
-    nfd # nativefiledialog-extended
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE FREEIMAGE_LIB)
+
+install(TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION ${LIB_OUTPUT_DIR}
+    LIBRARY DESTINATION ${LIB_OUTPUT_DIR}
+)
 # target_link_options(${PROJECT_NAME} PRIVATE -static -static-libgcc -static-libstdc++)
 
 # # Assets kopieren
@@ -161,12 +120,12 @@ if(SDL_ADDED)
   endif()
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  install(TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION bin
-    BUNDLE DESTINATION bin
-  )
-endif()
+# if(CMAKE_BUILD_TYPE STREQUAL "Release")
+#   install(TARGETS ${PROJECT_NAME}
+#     RUNTIME DESTINATION bin
+#     BUNDLE DESTINATION bin
+#   )
+# endif()
 
 add_custom_command(
   TARGET ${PROJECT_NAME} POST_BUILD

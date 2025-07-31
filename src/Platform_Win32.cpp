@@ -1,7 +1,7 @@
 #include "Platform.hpp"
 
 namespace Platform {
-auto OpenFileDialogue() -> std::filesystem::path {
+auto OpenFileDialogue() -> fs::path {
 	return "C:/Wallpaper/Test";
 }
 } // namespace Platform

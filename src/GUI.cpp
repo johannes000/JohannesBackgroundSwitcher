@@ -1,7 +1,7 @@
 #include "GUI.hpp"
 
 #include "App.hpp"
-#include "Platform.hpp"
+#include "nfd.hpp"
 
 #include <functional>
 
@@ -92,25 +92,29 @@ auto GUI::RenderMainWindow() -> void {
 				 ImGuiWindowFlags_HorizontalScrollbar |
 					 ImGuiWindowFlags_NoDecoration);
 	{
+		ImGui::BeginDisabled(mIsFileDialogOpen);
 		if (ImGui::Button("+", ImVec2(buttonWidth, 0)) && !mIsFileDialogOpen) {
 			mIsFileDialogOpen = true;
 			mFolderFuture = std::async(std::launch::async, []() {
-				return Platform::OpenFileDialogue();
+				fs::path returnPath;
+				NFD::UniquePath path;
+				nfdresult_t result = NFD::PickFolder(path, "C:\\Wallpaper");
+				return (result == NFD_OKAY) ? fs::path(path.get()) : fs::path("");
 			});
 		}
+		ImGui::EndDisabled();
 
 		using namespace std::literals;
 		if (mIsFileDialogOpen && mFolderFuture.valid() && mFolderFuture.wait_for(0s) == std::future_status::ready) {
 			fs::path path = mFolderFuture.get();
 			if (path.empty())
-				log->warn("Fehler beim Filedialog");
+				log->warn("Fehler beim Filedialog: ", NFD::GetError());
 			else {
 				mApp->AddWallpaperFolder(path);
 				mApp->Serialize();
 			}
 			mIsFileDialogOpen = false;
 		}
-
 		if (ImGui::Button("Manual", ImVec2(buttonWidth * 2 / 3, 0))) {
 			mApp->SetRandomWallpaper();
 		}

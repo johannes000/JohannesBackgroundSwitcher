@@ -1,7 +1,7 @@
 #pragma once
 
-#include <filesystem>
+#include "utility/Includes.hpp"
 
 namespace Platform {
-auto OpenFileDialogue() -> std::filesystem::path;
+auto OpenFileDialogue() -> fs::path;
 };

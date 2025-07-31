@@ -29,29 +29,10 @@ include(cmake/warnings.cmake)
 
 include(FetchContent)
 include(cmake/CPM.cmake)
+include(cmake/CPMPackages.cmake)
 include(cmake/imgui.cmake)
 include(cmake/freeimage.cmake)
 
-CPMAddPackage(
-  NAME SDL
-  GITHUB_REPOSITORY libsdl-org/SDL
-  GIT_TAG release-3.2.8
-  OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF"
-)
-
-
-CPMAddPackage(
-  NAME spdlog
-  GITHUB_REPOSITORY gabime/spdlog
-  VERSION 1.15.1
-  OPTIONS "SPDLOG_BUILD_SHARED OFF" "SPDLOG_BUILD_STATIC ON"
-)
-
-CPMAddPackage(
-  NAME glew
-  GITHUB_REPOSITORY nigels-com/glew
-  GIT_TAG glew-2.2.0
-)
 
 set(LIB_OUTPUT_DIR ${CMAKE_BINARY_DIR}/extern/lib)
 
@@ -82,6 +63,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CPM_PACKAGE_imgui_SOURCE_DIR}
     ${CPM_PACKAGE_SDL_SOURCE_DIR}/include
     ${CPM_PACKAGE_spdlog_SOURCE_DIR}/include
+    ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -91,6 +73,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
     spdlog::spdlog
     FreeImage
+    nfd # nativefiledialog-extended
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE FREEIMAGE_LIB)
 

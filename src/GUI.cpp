@@ -97,22 +97,36 @@ auto GUI::RenderMainWindow() -> void {
 		ImGui::BeginDisabled(mIsFileDialogOpen);
 		if (ImGui::Button("+", ImVec2(buttonRegionButtonWidth, 0)) && !mIsFileDialogOpen) {
 			mIsFileDialogOpen = true;
-			mFolderFuture = std::async(std::launch::async, []() {
-				fs::path returnPath;
-				NFD::UniquePath path;
-				nfdresult_t result = NFD::PickFolder(path, "C:\\Wallpaper");
-				return (result == NFD_OKAY) ? fs::path(path.get()) : fs::path("");
+			mFoldersFuture = std::async(std::launch::async, []() {
+				NFD::UniquePathSet outPaths;
+				nfdresult_t result = NFD::PickFolderMultiple(outPaths, "C:\\Wallpaper");
+				if (result == NFD_OKAY) {
+					nfdpathsetsize_t numPaths;
+					NFD::PathSet::Count(outPaths, numPaths);
+					std::vector<fs::path> returnVec;
+					returnVec.reserve(numPaths);
+
+					for (nfdpathsetsize_t i = 0; i < numPaths; ++i) {
+						NFD::UniquePathSetPath path;
+						NFD::PathSet::GetPath(outPaths, i, path);
+						returnVec.push_back(path.get());
+					}
+					return returnVec;
+				} else {
+					return std::vector<fs::path>{};
+				}
 			});
 		}
 		ImGui::EndDisabled();
 
 		using namespace std::literals;
-		if (mIsFileDialogOpen && mFolderFuture.valid() && mFolderFuture.wait_for(0s) == std::future_status::ready) {
-			fs::path path = mFolderFuture.get();
-			if (path.empty())
-				log->warn("Fehler beim Filedialog: ", NFD::GetError());
+		if (mIsFileDialogOpen && mFoldersFuture.valid() && mFoldersFuture.wait_for(0s) == std::future_status::ready) {
+			auto folders = mFoldersFuture.get();
+			if (folders.empty())
+				log->warn("NFD hat keine Folder zurückgegeben: ", NFD::GetError());
 			else {
-				mApp->AddWallpaperFolder(path);
+				for (const auto &path : folders)
+					mApp->AddWallpaperFolder(path);
 			}
 			mIsFileDialogOpen = false;
 		}

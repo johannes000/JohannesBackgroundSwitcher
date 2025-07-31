@@ -10,7 +10,6 @@
 #include <SDL3\SDL.h>
 #include <stdio.h>
 
-
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL3/SDL_opengles2.h>
 #else
@@ -68,6 +67,6 @@ private:
 
 	LogPtr log = AddLogger("GUI");
 
-	std::future<fs::path> mFolderFuture;
+	std::future<std::vector<fs::path>> mFoldersFuture;
 	bool mIsFileDialogOpen{false};
 };

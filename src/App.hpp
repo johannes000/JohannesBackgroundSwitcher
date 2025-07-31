@@ -10,7 +10,6 @@
 #include <cereal/types/unordered_set.hpp>
 #include <cereal/types/vector.hpp>
 
-
 #include <chrono>
 #include <random>
 #include <unordered_set>
@@ -73,7 +72,7 @@ public:
 		archive(
 			mWallpaperFolders,
 			mPathUseCount,
-			mWallpaperBlacklist,
+			// mWallpaperBlacklist,
 			mFolderBlacklist,
 			mCurrentWallpaper,
 			mWallpaperInterval,

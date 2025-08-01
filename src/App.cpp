@@ -170,11 +170,13 @@ auto App::RemoveWallpaperFolder(const fs::path /* path */) -> void {
 auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	if (!fs::exists(wallpaperPath) ||
 		fs::is_directory(wallpaperPath) ||
-		!Util::IsImageFile(wallpaperPath))
+		!Util::IsImageFile(wallpaperPath)) {
+		log->info("Kein Legitimes Wallpaper. {} {}", __FUNCTION__, wallpaperPath.string());
 		return;
+	}
 	auto now = std::chrono::steady_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - mLastChange);
-	if (duration.count() < 1000)
+	if (std::abs(duration.count()) < 1000)
 		return;
 
 	log->trace("Setze {} als Wallpaper", wallpaperPath.string());

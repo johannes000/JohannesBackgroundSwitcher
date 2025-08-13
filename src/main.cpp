@@ -1,13 +1,17 @@
 #include <fstream>
 
+#include <cereal/archives/binary.hpp>
+
 #include "App.hpp"
 #include "GUI.hpp"
-#include <cereal/archives/binary.hpp>
-#include <windows.h>
+#include "Platform.hpp"
 
 auto main(int, char **) -> i32 {
 	try {
 		bool isRunning = true;
+		auto log = AddLogger("MAIN");
+
+		Platform::RegisterWallpaperChangeHotkey();
 
 		FreeImage_Initialise();
 
@@ -31,6 +35,11 @@ auto main(int, char **) -> i32 {
 					isRunning = false;
 			}
 
+			if (Platform::CheckForWallpaperChangeHotkey() == Platform::HotkeyReaction::NEXT_WALLPAPER) {
+				log->info("Hotkey");
+				app->SetRandomWallpaper();
+			}
+
 			app->HandleEvents();
 			app->Update();
 			gui->Render();
@@ -46,6 +55,8 @@ auto main(int, char **) -> i32 {
 		app->Shutdown();
 
 		FreeImage_DeInitialise();
+
+		Platform::UnregisterWallpaperChangeHotkey();
 
 		return 0;
 	} catch (const std::exception &e) {

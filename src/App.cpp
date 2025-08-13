@@ -1,9 +1,6 @@
 
-// TODO: Platform Stuff
-#include <Windows.h>
-#include <gdiplus.h>
-
 #include "App.hpp"
+#include "Platform.hpp"
 #include <SDL3/SDL.h>
 
 namespace {
@@ -25,19 +22,8 @@ auto GetWeight(i32 count) -> f64 {
 
 auto App::HandleEvents() -> void {
 	// Windows-only Events
-	MSG msg;
-
-	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-		if (msg.message == WM_HOTKEY &&
-			msg.wParam == GLOBAL_WINDOWS_SWITCH_HOTKEY_ID) {
-			SetWallpaper(GetRandomWallpaper());
-		}
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
 
 	// SDL Events
-
 }
 
 auto App::HandleCounts(const fs::path &path) -> void {
@@ -116,7 +102,6 @@ auto App::Run() -> void {
 }
 
 auto App::Shutdown() -> void {
-	UnregisterHotKey(NULL, GLOBAL_WINDOWS_SWITCH_HOTKEY_ID);
 }
 
 auto App::AddWallpaperFolder(const fs::path path, bool selected) -> void {
@@ -181,13 +166,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
 	FreeImage_Unload(bitmap);
 
-	fs::path absolutePath = fs::absolute(temp);
-	BOOL ok = SystemParametersInfo(
-		SPI_SETDESKWALLPAPER,
-		0,
-		(void *)absolutePath.string().c_str(),
-		SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-	if (ok) {
+	if (Platform::ChangeWallpaper(temp)) {
 		mCurrentWallpaper = wallpaperPath;
 		mLastChange = now;
 	}
@@ -231,10 +210,5 @@ auto App::SetRandomWallpaper() -> void {
 
 auto App::Init() -> void {
 	mRunning = true;
-
 	mGen = std::mt19937(std::random_device{}());
-
-	if (RegisterHotKey(NULL, GLOBAL_WINDOWS_SWITCH_HOTKEY_ID, MOD_CONTROL | MOD_ALT, 0x4E)) {
-		log->trace("Windows Global Hotkey Registriert");
-	}
 }

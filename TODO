@@ -3,7 +3,7 @@ Funktions:
         ☐ Mit rechtsklick auf Folder checkboxen für Gruppen       
     ✔ Filedialog @high @done(01-08-25)
     ✔ cereal @high @done(01-08-25)
-    ☐ Main Loop in main.cpp verlagern 
+    ✔ Main Loop in main.cpp verlagern @done(13-08-25)
     ✔ Hintergrund Einstellen @done(01-05-25)
     ✔ Timer für Hintergrund Wechseln @done(01-05-25)
     ✔ Filedialog für Ordner @done(01-05-25)
@@ -39,3 +39,4 @@ UI:
 
 Bugs:
     ☐ Bug: Wenn alle Bilder bilder Blacklisted sind gibts Probleme
+    ☐ Hotkey Funktioniert nicht mehr

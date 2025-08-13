@@ -52,13 +52,20 @@ file(GLOB_RECURSE CORE_SOURCES
     src/app_icon.rc
 
     src/Platform.hpp
-    $<$<PLATFORM_ID:Windows>:src/Platform_Win32.cpp>
+    src/Platform_Win32.cpp
 
     src/App.cpp src/App.hpp
     src/GUI.cpp src/GUI.hpp
 
 )
 
+if(WIN32)
+    list(APPEND CORE_SOURCES src/Platform_Win32.cpp)
+elseif(APPLE)
+    list(APPEND CORE_SOURCES src/Platform_Mac.mm)
+elseif(UNIX AND NOT APPLE)
+    list(APPEND CORE_SOURCES src/Platform_Linux.cpp)
+endif()
 
 add_executable(${PROJECT_NAME} ${PLATFORM_SOURCES} ${CORE_SOURCES})
 

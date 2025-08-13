@@ -1,7 +1,9 @@
 Funktions:
+    ☐ Wallpaper Gruppen mit Tabs im Checklist view
+        ☐ Mit rechtsklick auf Folder checkboxen für Gruppen       
     ✔ Filedialog @high @done(01-08-25)
     ✔ cereal @high @done(01-08-25)
-    ☐ Main Loop ins main.cpp verlagern 
+    ☐ Main Loop in main.cpp verlagern 
     ✔ Hintergrund Einstellen @done(01-05-25)
     ✔ Timer für Hintergrund Wechseln @done(01-05-25)
     ✔ Filedialog für Ordner @done(01-05-25)
@@ -32,6 +34,7 @@ Funktions:
 
 UI:
     ☐ Stil ausdenken
+    ☐ Custom Titlebar
     ✔ Fenster schmall und non-Resizeable machen @done(19-05-25)
 
 Bugs:

@@ -29,6 +29,10 @@ auto GUI::Update() -> void {
 }
 
 auto GUI::Render() -> void {
+	if (SDL_GetWindowFlags(GetWindow()) & SDL_WINDOW_MINIMIZED) {
+		SDL_Delay(10);
+		return;
+	}
 	NewFrame();
 
 	ImGuiViewport *viewport = ImGui::GetMainViewport();

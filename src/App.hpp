@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GUI.hpp"
 #include "utility/Includes.hpp"
 
 #include <cereal/archives/binary.hpp>
@@ -48,6 +47,11 @@ public:
 	auto Run() -> void;
 	auto Shutdown() -> void;
 
+	auto Update() -> void;
+	auto HandleEvents() -> void;
+
+	auto IsRunning() -> bool { return mRunning; }
+
 	auto AddWallpaperFolder(const fs::path path, bool selected = true) -> void;
 	auto RemoveWallpaperFolder(const fs::path path) -> void;
 	auto GetWallpaperFolders() const -> const auto & { return mWallpaperFolders; };
@@ -80,8 +84,6 @@ public:
 	}
 
 private:
-	auto Update() -> void;
-	auto HandleEvents() -> void;
 	auto HandleCounts(const fs::path &path) -> void;
 
 	auto SelectWeightedEntry(const fs::path &path) -> fs::path;
@@ -92,8 +94,6 @@ private:
 	auto FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path path) -> bool;
 
 private:
-	GUI mGUI;
-
 	std::mt19937 mGen;
 
 	std::vector<WallpaperFolder> mWallpaperFolders;

@@ -48,9 +48,15 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 set(CPM_USE_LOCAL_PACKAGES ON)  # Bessere Wiederverwendung zwischen Builds
 
 file(GLOB_RECURSE CORE_SOURCES
-    src/*.cpp
-    src/*.hpp
+    src/main.cpp
     src/app_icon.rc
+
+    src/Platform.hpp
+    $<$<PLATFORM_ID:Windows>:src/Platform_Win32.cpp>
+
+    src/App.cpp src/App.hpp
+    src/GUI.cpp src/GUI.hpp
+
 )
 
 

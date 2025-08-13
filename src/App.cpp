@@ -37,14 +37,7 @@ auto App::HandleEvents() -> void {
 	}
 
 	// SDL Events
-	SDL_Event event;
-	while (SDL_PollEvent(&event)) {
-		ImGui_ImplSDL3_ProcessEvent(&event);
-		if (event.type == SDL_EVENT_QUIT)
-			mRunning = false;
-		if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(mGUI.GetWindow()))
-			mRunning = false;
-	}
+
 }
 
 auto App::HandleCounts(const fs::path &path) -> void {
@@ -117,26 +110,12 @@ auto App::Update() -> void {
 		SetRandomWallpaper();
 		mLastChange = std::chrono::steady_clock::now();
 	}
-
-	mGUI.Update();
 }
 
 auto App::Run() -> void {
-	while (mRunning) {
-		HandleEvents();
-		Update();
-		if (SDL_GetWindowFlags(mGUI.GetWindow()) & SDL_WINDOW_MINIMIZED) {
-			SDL_Delay(10);
-		} else {
-			mGUI.Render();
-		}
-	}
 }
 
 auto App::Shutdown() -> void {
-	mGUI.Shutdown();
-	FreeImage_DeInitialise();
-
 	UnregisterHotKey(NULL, GLOBAL_WINDOWS_SWITCH_HOTKEY_ID);
 }
 
@@ -198,8 +177,6 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	if (!bitmap)
 		return;
 
-	mGUI.RenderTextInBitmap(bitmap, "ASDHASDOH");
-
 	fs::path temp = outputDir / "1.bmp";
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
 	FreeImage_Unload(bitmap);
@@ -253,10 +230,6 @@ auto App::SetRandomWallpaper() -> void {
 }
 
 auto App::Init() -> void {
-	mGUI.Init(this);
-
-	FreeImage_Initialise();
-
 	mRunning = true;
 
 	mGen = std::mt19937(std::random_device{}());

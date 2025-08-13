@@ -3,9 +3,8 @@ CPMAddPackage(
   NAME SDL
   GITHUB_REPOSITORY libsdl-org/SDL
   GIT_TAG release-3.2.8
-  OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF"
+  OPTIONS "SDL_SHARED OFF" "SDL_STATIC ON"
 )
-
 
 CPMAddPackage(
   NAME spdlog

@@ -16,7 +16,6 @@ auto RegisterWallpaperChangeHotkey() -> void {
 		log->trace("Windows Global Hotkey Registriert");
 	}
 }
-
 auto CheckForWallpaperChangeHotkey() -> HotkeyReaction {
 	HotkeyReaction reaction = HotkeyReaction::NONE;
 
@@ -26,7 +25,6 @@ auto CheckForWallpaperChangeHotkey() -> HotkeyReaction {
 		if (msg.message == WM_HOTKEY &&
 			msg.wParam == GLOBAL_WINDOWS_SWITCH_HOTKEY_ID) {
 			reaction = HotkeyReaction::NEXT_WALLPAPER;
-			log->info("Hotkey-ID: {}", msg.wParam);
 		}
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);

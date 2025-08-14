@@ -26,6 +26,13 @@ auto main(int, char **) -> i32 {
 		gui->Init(app.get());
 
 		while (isRunning) {
+
+			// Windows muss die Hotkeys zuerst checken sonst frisst SDL die Events.
+			auto hotkey = Platform::CheckForWallpaperChangeHotkey();
+			if (hotkey == Platform::HotkeyReaction::NEXT_WALLPAPER) {
+				app->SetRandomWallpaper();
+			}
+
 			SDL_Event event;
 			while (SDL_PollEvent(&event)) {
 				ImGui_ImplSDL3_ProcessEvent(&event);
@@ -33,11 +40,6 @@ auto main(int, char **) -> i32 {
 					isRunning = false;
 				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(gui->GetWindow()))
 					isRunning = false;
-			}
-
-			if (Platform::CheckForWallpaperChangeHotkey() == Platform::HotkeyReaction::NEXT_WALLPAPER) {
-				log->info("Hotkey");
-				app->SetRandomWallpaper();
 			}
 
 			app->HandleEvents();

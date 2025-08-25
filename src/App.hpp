@@ -1,6 +1,7 @@
 #pragma once
 
-#include "utility/Includes.hpp"
+#include "utility/BS_thread_pool.hpp" // IWYU pragma: keep
+#include "utility/Includes.hpp"		  // IWYU pragma: keep
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/chrono.hpp>
@@ -62,7 +63,9 @@ public:
 
 	auto SetWallpaper(const fs::path &wallpaperPath) -> void;
 	auto GetRandomWallpaper() -> fs::path;
+	auto GetRandomWallpaperAsync() -> void;
 	auto SetRandomWallpaper() -> void;
+	auto SetRandomWallpaperAsync() -> void;
 
 	auto SetWallpaperIntervalInMinutes(u32 minutes) -> void { mWallpaperInterval = std::chrono::minutes(minutes); };
 	auto SetWallpaperIntervalInSeconds(u32 seconds) -> void { mWallpaperInterval = std::chrono::minutes(seconds / 60); };
@@ -108,4 +111,8 @@ private:
 
 	std::chrono::minutes mWallpaperInterval{5};
 	std::chrono::steady_clock::time_point mLastChange;
+
+	BS::thread_pool mThreadPool;
+	std::future<fs::path> mWallpaperFuture;
+	std::atomic<bool> mWallpaperLoading{false};
 };

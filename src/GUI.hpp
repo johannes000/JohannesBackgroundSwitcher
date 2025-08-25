@@ -68,5 +68,5 @@ private:
 	LogPtr log = AddLogger("GUI");
 
 	std::future<std::vector<fs::path>> mFoldersFuture;
-	bool mIsFileDialogOpen{false};
+	std::atomic<bool> mIsFileDialogOpen{false};
 };

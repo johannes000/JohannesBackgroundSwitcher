@@ -92,13 +92,23 @@ auto App::FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path 
 }
 
 auto App::Update() -> void {
+	if (mWallpaperLoading && mWallpaperFuture.valid()) {
+		if (mWallpaperFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+			try {
+				fs::path wallpaper = mWallpaperFuture.get();
+				if (!wallpaper.empty())
+					SetWallpaper(wallpaper);
+			} catch (const std::exception &e) {
+				log->error("Fehler beim Async Wallpaper wechsel: {}", e.what());
+			}
+			mWallpaperLoading = false;
+		}
+	}
+
 	if (std::chrono::steady_clock::now() - mLastChange > mWallpaperInterval) {
-		SetRandomWallpaper();
+		SetRandomWallpaperAsync();
 		mLastChange = std::chrono::steady_clock::now();
 	}
-}
-
-auto App::Run() -> void {
 }
 
 auto App::Shutdown() -> void {
@@ -204,8 +214,41 @@ auto App::GetRandomWallpaper() -> fs::path {
 	return "C:/Wallpaper/1.webp";
 }
 
+auto App::GetRandomWallpaperAsync() -> void {
+	if (mWallpaperLoading) {
+		log->debug("Wallpaper wird schon geladen.");
+		return;
+	}
+
+	mWallpaperLoading = true;
+	mWallpaperFuture = mThreadPool.submit([this]() -> fs::path {
+		try {
+			return GetRandomWallpaper();
+		} catch (const std::exception &e) {
+			log->error("Fehler in {}: {}", __FUNCTION__, e.what());
+			return "";
+		}
+	});
+}
+
 auto App::SetRandomWallpaper() -> void {
 	SetWallpaper(GetRandomWallpaper());
+}
+
+auto App::SetRandomWallpaperAsync() -> void {
+	if (mWallpaperLoading) {
+		log->debug("Wallpaper wird schon geladen.");
+		return;
+	}
+	mWallpaperLoading = true;
+	mWallpaperFuture = mThreadPool.submit([this]() -> fs::path {
+		try {
+			return GetRandomWallpaper();
+		} catch (const std::exception &e) {
+			log->error("Fehler in {}: {}", __FUNCTION__, e.what());
+			return "";
+		}
+	});
 }
 
 auto App::Init() -> void {

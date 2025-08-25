@@ -100,6 +100,7 @@ auto GUI::RenderMainWindow() -> void {
 		f32 buttonRegionButtonWidth = buttonRegionWidth - ImGui::GetStyle().WindowPadding.x;
 		ImGui::BeginDisabled(mIsFileDialogOpen);
 		if (ImGui::Button("+", ImVec2(buttonRegionButtonWidth, 0)) && !mIsFileDialogOpen) {
+			// TODO: In App verlagern und den threadpool benutzen
 			mIsFileDialogOpen = true;
 			mFoldersFuture = std::async(std::launch::async, []() {
 				NFD::UniquePathSet outPaths;
@@ -135,7 +136,7 @@ auto GUI::RenderMainWindow() -> void {
 			mIsFileDialogOpen = false;
 		}
 		if (ImGui::Button("Manual", ImVec2(buttonRegionButtonWidth * 2 / 3, 0))) {
-			mApp->SetRandomWallpaper();
+			mApp->SetRandomWallpaperAsync();
 		}
 
 		ImGui::SameLine();

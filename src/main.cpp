@@ -28,9 +28,8 @@ auto main(int, char **) -> i32 {
 		while (isRunning) {
 
 			// Windows muss die Hotkeys zuerst checken sonst frisst SDL die Events.
-			auto hotkey = Platform::CheckForWallpaperChangeHotkey();
-			if (hotkey == Platform::HotkeyReaction::NEXT_WALLPAPER) {
-				app->SetRandomWallpaper();
+			if (Platform::CheckForWallpaperChangeHotkey() == Platform::HotkeyReaction::NEXT_WALLPAPER) {
+				app->SetRandomWallpaperAsync();
 			}
 
 			SDL_Event event;

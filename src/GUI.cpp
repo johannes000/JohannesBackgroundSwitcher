@@ -60,7 +60,7 @@ auto GUI::Render() -> void {
 
 	RenderMainWindow();
 
-	// RenderDemoWindows(); // Falls noch benötigt
+	// RenderDemoWindows();
 
 	ImGui::End();
 	EndFrame();

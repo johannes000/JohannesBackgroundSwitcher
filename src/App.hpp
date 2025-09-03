@@ -45,7 +45,6 @@ public:
 	App &operator=(const App &) = delete;
 
 	auto Init() -> void;
-	auto Run() -> void;
 	auto Shutdown() -> void;
 
 	auto Update() -> void;

@@ -51,26 +51,17 @@ file(GLOB_RECURSE CORE_SOURCES
     src/main.cpp
     src/app_icon.rc
 
-    src/Platform.hpp
-    src/Platform_Win32.cpp
-
     src/App.cpp src/App.hpp
     src/GUI.cpp src/GUI.hpp
-
 )
 
-if(WIN32)
-    list(APPEND CORE_SOURCES src/Platform_Win32.cpp)
-elseif(APPLE)
-    list(APPEND CORE_SOURCES src/Platform_Mac.mm)
-elseif(UNIX AND NOT APPLE)
-    list(APPEND CORE_SOURCES src/Platform_Linux.cpp)
-endif()
+add_subdirectory(platform)
 
 add_executable(${PROJECT_NAME} ${PLATFORM_SOURCES} ${CORE_SOURCES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${PROJECT_SOURCE_DIR}src/
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/platform
     ${PROJECT_SOURCE_DIR}/extern/include
     ${CPM_PACKAGE_cereal_SOURCE_DIR}/include
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
@@ -81,12 +72,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    $<$<PLATFORM_ID:Windows>:user32>
     imgui
     opengl32
     SDL3::SDL3
     spdlog::spdlog
     FreeImage
+    Platform
     nfd # nativefiledialog-extended
 )
 target_compile_definitions(${PROJECT_NAME} PRIVATE FREEIMAGE_LIB)

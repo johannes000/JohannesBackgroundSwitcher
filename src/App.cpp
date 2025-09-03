@@ -105,9 +105,12 @@ auto App::Update() -> void {
 		}
 	}
 
-	if (std::chrono::steady_clock::now() - mLastChange > mWallpaperInterval) {
+	auto now = std::chrono::steady_clock::now();
+	auto elapsed = now - mLastChange;
+
+	if (elapsed > mWallpaperInterval) {
 		SetRandomWallpaperAsync();
-		mLastChange = std::chrono::steady_clock::now();
+		mLastChange = now;
 	}
 }
 
@@ -150,8 +153,6 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	}
 	auto now = std::chrono::steady_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - mLastChange);
-	if (std::abs(duration.count()) < 1000)
-		return;
 
 	log->trace("Setze {} als Wallpaper", wallpaperPath.string());
 
@@ -216,7 +217,6 @@ auto App::GetRandomWallpaper() -> fs::path {
 
 auto App::GetRandomWallpaperAsync() -> void {
 	if (mWallpaperLoading) {
-		log->debug("Wallpaper wird schon geladen.");
 		return;
 	}
 
@@ -237,13 +237,13 @@ auto App::SetRandomWallpaper() -> void {
 
 auto App::SetRandomWallpaperAsync() -> void {
 	if (mWallpaperLoading) {
-		log->debug("Wallpaper wird schon geladen.");
 		return;
 	}
 	mWallpaperLoading = true;
 	mWallpaperFuture = mThreadPool.submit([this]() -> fs::path {
 		try {
-			return GetRandomWallpaper();
+			auto result = GetRandomWallpaper();
+			return result;
 		} catch (const std::exception &e) {
 			log->error("Fehler in {}: {}", __FUNCTION__, e.what());
 			return "";

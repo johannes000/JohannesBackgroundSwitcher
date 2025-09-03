@@ -43,7 +43,11 @@ auto main(int, char **) -> i32 {
 
 			app->HandleEvents();
 			app->Update();
-			gui->Render();
+			if (!(SDL_GetWindowFlags(gui->GetWindow()) & SDL_WINDOW_MINIMIZED)) {
+				gui->Render();
+			} else {
+				SDL_Delay(10);
+			}
 		}
 
 		{

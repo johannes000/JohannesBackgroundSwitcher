@@ -63,6 +63,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/platform
     ${PROJECT_SOURCE_DIR}/extern/include
+
     ${CPM_PACKAGE_cereal_SOURCE_DIR}/include
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
     ${CPM_PACKAGE_imgui_SOURCE_DIR}

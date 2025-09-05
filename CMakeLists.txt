@@ -76,6 +76,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     imgui
     opengl32
     SDL3::SDL3
+    SDL3_ttf::SDL3_ttf
     spdlog::spdlog
     FreeImage
     Platform

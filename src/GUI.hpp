@@ -8,6 +8,7 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl3.h"
 #include <SDL3\SDL.h>
+#include <SDL3_ttf\SDL_ttf.h>
 #include <stdio.h>
 
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -62,6 +63,8 @@ private:
 	SDL_GLContext mGLContext;
 	ImGuiIO mImGuiIO;
 	TextureData mCurrentWallpaper;
+
+	TTF_Font *mFont;
 
 	App *mApp;
 

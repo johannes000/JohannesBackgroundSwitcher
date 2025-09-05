@@ -35,6 +35,8 @@ struct WallpaperFolder {
 	};
 };
 
+class GUI;
+
 class App {
 public:
 	App() {};
@@ -44,7 +46,7 @@ public:
 	App &operator=(App &&) = delete;
 	App &operator=(const App &) = delete;
 
-	auto Init() -> void;
+	auto Init(GUI *gui) -> void;
 	auto Shutdown() -> void;
 
 	auto Update() -> void;
@@ -96,6 +98,8 @@ private:
 	auto FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path path) -> bool;
 
 private:
+	GUI *mGui;
+
 	std::mt19937 mGen;
 
 	std::vector<WallpaperFolder> mWallpaperFolders;

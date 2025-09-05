@@ -16,13 +16,14 @@ auto main(int, char **) -> i32 {
 		FreeImage_Initialise();
 
 		auto app = std::make_unique<App>();
-		app->Init();
+		auto gui = std::make_unique<GUI>();
+
+		app->Init(gui.get());
 		if (std::ifstream is("data.knaub", std::ios::binary); is.good()) {
 			cereal::BinaryInputArchive archive(is);
 			archive(*app);
 		}
 
-		auto gui = std::make_unique<GUI>();
 		gui->Init(app.get());
 
 		while (isRunning) {

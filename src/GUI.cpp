@@ -20,6 +20,17 @@ constexpr std::array<const char *, 10> intervalStrings{"1 min", "2 min", "5 min"
 
 const fs::path TTFFontPath = "./assets/font/Lato-Regular.ttf";
 constexpr f32 TTFFontSize = 20.f;
+
+namespace Settings {
+i32 PrintTextPaddingVertical = 5;
+i32 PrintTextPaddingHorizontal = 5;
+enum struct PrintTextPositions { Top_Left,
+								 Top_Right,
+								 Bottom_Left,
+								 Bottom_Right };
+PrintTextPositions PrintTextPosition{PrintTextPositions::Top_Right};
+}; // namespace Settings
+
 } // namespace
 
 auto GUI::HandleEvents() -> void {
@@ -62,7 +73,63 @@ auto GUI::Render() -> void {
 	EndFrame();
 }
 
-auto GUI::RenderTextInBitmap(FIBITMAP * /* bitmap */, const std::string /* text */) -> void {
+auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
+	SDL_Color white = {255, 255, 255, 255};
+	SDL_Color black = {0, 0, 0, 10};
+	SDL_Surface *textSurface = TTF_RenderText_Blended(mFont, text.c_str(), 0, white);
+	if (!textSurface) {
+		log->error("Fehler beim Text-Rendering: {}", SDL_GetError());
+		return;
+	}
+	auto convertedTextSurface = SDL_ConvertSurface(textSurface, SDL_PIXELFORMAT_BGRA8888);
+	SDL_FlipSurface(convertedTextSurface, SDL_FLIP_VERTICAL);
+
+	i32 width = FreeImage_GetWidth(bitmap);
+	i32 height = FreeImage_GetHeight(bitmap);
+	i32 freeImagePitch = FreeImage_GetPitch(bitmap);
+	BYTE *pixels = FreeImage_GetBits(bitmap);
+
+	SDL_Surface *surface = SDL_CreateSurfaceFrom(
+		width, height,
+		SDL_PIXELFORMAT_BGRA8888,
+		pixels, freeImagePitch);
+
+	if (!surface) {
+		log->error("Fehler beim surface erstellen: {}. Pitch: {}", SDL_GetError(), freeImagePitch);
+		SDL_DestroySurface(textSurface);
+		SDL_DestroySurface(convertedTextSurface);
+		return;
+	}
+
+	SDL_Rect dst = {0, surface->h, convertedTextSurface->w, convertedTextSurface->h};
+	switch (Settings::PrintTextPosition) {
+		case Settings::PrintTextPositions::Top_Left: {
+			dst.x = Settings::PrintTextPaddingHorizontal;
+			dst.y = surface->h - convertedTextSurface->h - Settings::PrintTextPaddingVertical;
+		} break;
+		case Settings::PrintTextPositions::Top_Right: {
+			dst.x = surface->w - convertedTextSurface->w - Settings::PrintTextPaddingHorizontal;
+			dst.y = surface->h - convertedTextSurface->h - Settings::PrintTextPaddingVertical;
+		} break;
+		case Settings::PrintTextPositions::Bottom_Left: {
+			dst.x = Settings::PrintTextPaddingHorizontal;
+			dst.y = Settings::PrintTextPaddingVertical;
+		} break;
+		case Settings::PrintTextPositions::Bottom_Right: {
+			dst.x = surface->w - convertedTextSurface->w - Settings::PrintTextPaddingHorizontal;
+			dst.y = Settings::PrintTextPaddingVertical;
+		} break;
+		default: {
+			dst.x = Settings::PrintTextPaddingHorizontal;
+			dst.y = Settings::PrintTextPaddingVertical;
+		} break;
+	}
+
+	SDL_BlitSurface(convertedTextSurface, NULL, surface, &dst);
+
+	SDL_DestroySurface(surface);
+	SDL_DestroySurface(textSurface);
+	SDL_DestroySurface(convertedTextSurface);
 }
 
 auto RenderFolderPathText(WallpaperFolder &folder) -> void {
@@ -227,6 +294,9 @@ auto GUI::InitRenderer() -> void {
 		throw std::runtime_error(std::string("SDL_Init failed: ") + SDL_GetError());
 	}
 
+	if (!TTF_Init())
+		throw std::runtime_error(std::string("TTF_Init failed "));
+
 	// Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 	// GL ES 2.0 + GLSL 100 (WebGL 1.0)
@@ -332,12 +402,23 @@ auto GUI::Shutdown() -> void {
 
 	SDL_GL_DestroyContext(mGLContext);
 	SDL_DestroyWindow(mWindow);
+
+	TTF_CloseFont(mFont);
+
+	TTF_Quit();
 	SDL_Quit();
 }
 
 auto GUI::Init(App *app) -> void {
 	mApp = app;
 	InitRenderer();
+
+	mFont = TTF_OpenFont(TTFFontPath.string().c_str(), TTFFontSize);
+	if (!mFont) {
+		log->error("Fehler beim Font laden.");
+	} else {
+		log->debug("Font: {} erfolgreich geladen.", TTFFontPath.filename().string());
+	}
 }
 
 auto GUI::EndFrame() -> void {

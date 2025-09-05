@@ -69,6 +69,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CPM_PACKAGE_imgui_SOURCE_DIR}
     ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
     ${CPM_PACKAGE_SDL_SOURCE_DIR}/include
+    ${CPM_PACKAGE_SDL_ttf_SOURCE_DIR}/include
     ${CPM_PACKAGE_spdlog_SOURCE_DIR}/include
 )
 

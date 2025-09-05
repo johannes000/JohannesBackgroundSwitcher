@@ -1,5 +1,6 @@
 
 #include "App.hpp"
+#include "GUI.hpp"
 #include "Platform.hpp"
 #include <SDL3/SDL.h>
 
@@ -12,6 +13,10 @@ constexpr const char *statsPath = "./stats.json";
 constexpr const char *settingsPath = "./settings.json";
 constexpr const char *defaultSettingsPath = "./default_settings.json";
 constexpr const char *ttfFilePath = "./assets/font/Lato-Regular.ttf";
+
+namespace Settings {
+bool RenderFilename = true;
+}
 } // namespace
 
 auto GetWeight(i32 count) -> f64 {
@@ -164,6 +169,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	}
 
 	auto bitmap = Util::LoadImage(wallpaperPath);
+	bitmap = FreeImage_ConvertTo32Bits(bitmap);
 	if (FreeImage_GetWidth(bitmap) != 1920)
 		bitmap = FreeImage_Rescale(bitmap, 1920, 1080);
 	if (!bitmap) {
@@ -172,6 +178,10 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	}
 	if (!bitmap)
 		return;
+
+	if (Settings::RenderFilename) {
+		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
+	}
 
 	fs::path temp = outputDir / "1.bmp";
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
@@ -251,7 +261,8 @@ auto App::SetRandomWallpaperAsync() -> void {
 	});
 }
 
-auto App::Init() -> void {
+auto App::Init(GUI *gui) -> void {
 	mRunning = true;
 	mGen = std::mt19937(std::random_device{}());
+	mGui = gui;
 }

@@ -65,6 +65,7 @@ private:
 	TextureData mCurrentWallpaper;
 
 	TTF_Font *mFont;
+	TTF_Font *mFontOutline;
 
 	App *mApp;
 

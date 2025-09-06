@@ -29,6 +29,7 @@ enum struct PrintTextPositions { Top_Left,
 								 Bottom_Left,
 								 Bottom_Right };
 PrintTextPositions PrintTextPosition{PrintTextPositions::Top_Right};
+bool PrintTextOutline = true;
 }; // namespace Settings
 
 } // namespace
@@ -75,14 +76,15 @@ auto GUI::Render() -> void {
 
 auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 	SDL_Color white = {255, 255, 255, 255};
-	SDL_Color black = {0, 0, 0, 10};
+	SDL_Color black = {0, 0, 0, 0};
 	SDL_Surface *textSurface = TTF_RenderText_Blended(mFont, text.c_str(), 0, white);
-	if (!textSurface) {
+	SDL_Surface *textOutlineSurface = TTF_RenderText_Blended(mFontOutline, text.c_str(), 0, black);
+	if (!textSurface || !textOutlineSurface) {
 		log->error("Fehler beim Text-Rendering: {}", SDL_GetError());
 		return;
 	}
-	auto convertedTextSurface = SDL_ConvertSurface(textSurface, SDL_PIXELFORMAT_BGRA8888);
-	SDL_FlipSurface(convertedTextSurface, SDL_FLIP_VERTICAL);
+	SDL_FlipSurface(textSurface, SDL_FLIP_VERTICAL);
+	SDL_FlipSurface(textOutlineSurface, SDL_FLIP_VERTICAL);
 
 	i32 width = FreeImage_GetWidth(bitmap);
 	i32 height = FreeImage_GetHeight(bitmap);
@@ -93,30 +95,36 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		width, height,
 		SDL_PIXELFORMAT_BGRA8888,
 		pixels, freeImagePitch);
-
 	if (!surface) {
 		log->error("Fehler beim surface erstellen: {}. Pitch: {}", SDL_GetError(), freeImagePitch);
 		SDL_DestroySurface(textSurface);
-		SDL_DestroySurface(convertedTextSurface);
+		SDL_DestroySurface(textOutlineSurface);
 		return;
 	}
 
-	SDL_Rect dst = {0, surface->h, convertedTextSurface->w, convertedTextSurface->h};
+	if (Settings::PrintTextOutline) {
+		SDL_Rect outlineDest = {0, 1, textSurface->w, textSurface->h};
+		SDL_SetSurfaceBlendMode(textSurface, SDL_BLENDMODE_BLEND);
+		SDL_BlitSurface(textSurface, NULL, textOutlineSurface, &outlineDest);
+		textSurface = textOutlineSurface;
+	}
+
+	SDL_Rect dst = {0, surface->h, textSurface->w, textSurface->h};
 	switch (Settings::PrintTextPosition) {
 		case Settings::PrintTextPositions::Top_Left: {
 			dst.x = Settings::PrintTextPaddingHorizontal;
-			dst.y = surface->h - convertedTextSurface->h - Settings::PrintTextPaddingVertical;
+			dst.y = surface->h - textSurface->h - Settings::PrintTextPaddingVertical;
 		} break;
 		case Settings::PrintTextPositions::Top_Right: {
-			dst.x = surface->w - convertedTextSurface->w - Settings::PrintTextPaddingHorizontal;
-			dst.y = surface->h - convertedTextSurface->h - Settings::PrintTextPaddingVertical;
+			dst.x = surface->w - textSurface->w - Settings::PrintTextPaddingHorizontal;
+			dst.y = surface->h - textSurface->h - Settings::PrintTextPaddingVertical;
 		} break;
 		case Settings::PrintTextPositions::Bottom_Left: {
 			dst.x = Settings::PrintTextPaddingHorizontal;
 			dst.y = Settings::PrintTextPaddingVertical;
 		} break;
 		case Settings::PrintTextPositions::Bottom_Right: {
-			dst.x = surface->w - convertedTextSurface->w - Settings::PrintTextPaddingHorizontal;
+			dst.x = surface->w - textSurface->w - Settings::PrintTextPaddingHorizontal;
 			dst.y = Settings::PrintTextPaddingVertical;
 		} break;
 		default: {
@@ -125,11 +133,11 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		} break;
 	}
 
-	SDL_BlitSurface(convertedTextSurface, NULL, surface, &dst);
+	SDL_BlitSurface(textSurface, NULL, surface, &dst);
 
 	SDL_DestroySurface(surface);
 	SDL_DestroySurface(textSurface);
-	SDL_DestroySurface(convertedTextSurface);
+	SDL_DestroySurface(textOutlineSurface);
 }
 
 auto RenderFolderPathText(WallpaperFolder &folder) -> void {
@@ -414,11 +422,13 @@ auto GUI::Init(App *app) -> void {
 	InitRenderer();
 
 	mFont = TTF_OpenFont(TTFFontPath.string().c_str(), TTFFontSize);
-	if (!mFont) {
+	mFontOutline = TTF_OpenFont(TTFFontPath.string().c_str(), TTFFontSize);
+	if (!mFont || !mFontOutline) {
 		log->error("Fehler beim Font laden.");
 	} else {
 		log->debug("Font: {} erfolgreich geladen.", TTFFontPath.filename().string());
 	}
+	TTF_SetFontOutline(mFontOutline, 1);
 }
 
 auto GUI::EndFrame() -> void {

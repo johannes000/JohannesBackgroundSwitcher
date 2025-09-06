@@ -161,7 +161,6 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	FIBITMAP *tempBitmap = nullptr;
 
 	auto now = std::chrono::steady_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - mLastChange);
 
 	log->trace("Setze {} als Wallpaper", wallpaperPath.string());
 
@@ -171,27 +170,42 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	if (!fs::exists(outputDir)) {
 		fs::create_directory(outputDir);
 	}
+
 	bitmap = Util::LoadImage(wallpaperPath);
-	if (!bitmap) log->error("Bild konnte nicht geladen werden");
+	if (!bitmap) {
+		log->error("Bild konnte nicht geladen werden");
+		return;
+	}
 
 	tempBitmap = FreeImage_ConvertTo32Bits(bitmap);
 	FreeImage_Unload(bitmap);
 	bitmap = tempBitmap;
 	tempBitmap = nullptr;
 
-	if (FreeImage_GetWidth(bitmap) != 1920)
-		bitmap = FreeImage_Rescale(bitmap, 1920, 1080);
 	if (!bitmap) {
-		FreeImage_Unload(bitmap);
-		bitmap = Util::LoadImage(outputDir / "default.bmp");
-	}
-	if (!bitmap)
+		log->error("Konvertierung zu 32Bit fehlgeschlagen");
 		return;
+	}
+
+	if (FreeImage_GetWidth(bitmap) != 1920) {
+		FIBITMAP* rescaledBitmap = FreeImage_Rescale(bitmap, 1920, 1080);
+		FreeImage_Unload(bitmap);
+		bitmap = rescaledBitmap;
+	}
+
+	if (!bitmap) {
+		bitmap = Util::LoadImage(outputDir / "default.bmp");
+		if (!bitmap) {
+			log->error("Default-Bild konnte nicht geladen werden");
+			return;
+		}
+	}
 
 	if (Settings::RenderFilename) {
 		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
 	}
 
+	log->info("bitmap size: {}", bitmap->data);
 	fs::path temp = outputDir / "1.bmp";
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
 	FreeImage_Unload(bitmap);

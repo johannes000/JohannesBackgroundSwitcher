@@ -129,10 +129,13 @@ add_custom_command(
 )
 
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if(MSVC)
-        target_link_options(${PROJECT_NAME} PRIVATE "/SUBSYSTEM:WINDOWS")
-    elseif(MINGW)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_link_options(${PROJECT_NAME} PRIVATE "-mwindows")
+        add_compile_options(-g3 -ggdb -O0 -pedantic)
+        add_link_options(-g)
+    elseif(MSVC)
+        target_link_options(${PROJECT_NAME} PRIVATE "/SUBSYSTEM:WINDOWS")
+        add_link_options(/DEBUG /OPT:REF /OPT:ICF)
     endif()
 endif()
 

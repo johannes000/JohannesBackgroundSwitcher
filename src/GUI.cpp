@@ -509,7 +509,6 @@ auto GUI::UpdateWallpaperTexture() -> void {
 }
 
 auto GUI::LoadFreeImageAsTexture(const fs::path &wallpaperPath) -> GLuint {
-	return 0;
 	FIBITMAP *bitmap = Util::LoadImage(wallpaperPath);
 	FIBITMAP *converted = FreeImage_ConvertTo32Bits(bitmap);
 	FreeImage_Unload(bitmap);

@@ -26,6 +26,7 @@ message("Compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 # Abhängigkeiten
 include(cmake/warnings.cmake)
+# include(cmake/AddressSanitizer.cmake)
 
 include(FetchContent)
 include(cmake/CPM.cmake)

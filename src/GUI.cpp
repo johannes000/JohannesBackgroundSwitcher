@@ -102,29 +102,26 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		return;
 	}
 
-	if (Settings::PrintTextOutline) {
-		SDL_Rect outlineDest = {0, 1, textSurface->w, textSurface->h};
-		SDL_SetSurfaceBlendMode(textSurface, SDL_BLENDMODE_BLEND);
-		SDL_BlitSurface(textSurface, NULL, textOutlineSurface, &outlineDest);
-		textSurface = textOutlineSurface;
-	}
+	SDL_Rect outlineDest = {0, 1, textSurface->w, textSurface->h};
+	SDL_SetSurfaceBlendMode(textSurface, SDL_BLENDMODE_BLEND);
+	SDL_BlitSurface(textSurface, NULL, textOutlineSurface, &outlineDest);
 
-	SDL_Rect dst = {0, surface->h, textSurface->w, textSurface->h};
+	SDL_Rect dst = {0, surface->h, textOutlineSurface->w, textOutlineSurface->h};
 	switch (Settings::PrintTextPosition) {
 		case Settings::PrintTextPositions::Top_Left: {
 			dst.x = Settings::PrintTextPaddingHorizontal;
-			dst.y = surface->h - textSurface->h - Settings::PrintTextPaddingVertical;
+			dst.y = surface->h - textOutlineSurface->h - Settings::PrintTextPaddingVertical;
 		} break;
 		case Settings::PrintTextPositions::Top_Right: {
-			dst.x = surface->w - textSurface->w - Settings::PrintTextPaddingHorizontal;
-			dst.y = surface->h - textSurface->h - Settings::PrintTextPaddingVertical;
+			dst.x = surface->w - textOutlineSurface->w - Settings::PrintTextPaddingHorizontal;
+			dst.y = surface->h - textOutlineSurface->h - Settings::PrintTextPaddingVertical;
 		} break;
 		case Settings::PrintTextPositions::Bottom_Left: {
 			dst.x = Settings::PrintTextPaddingHorizontal;
 			dst.y = Settings::PrintTextPaddingVertical;
 		} break;
 		case Settings::PrintTextPositions::Bottom_Right: {
-			dst.x = surface->w - textSurface->w - Settings::PrintTextPaddingHorizontal;
+			dst.x = surface->w - textOutlineSurface->w - Settings::PrintTextPaddingHorizontal;
 			dst.y = Settings::PrintTextPaddingVertical;
 		} break;
 		default: {
@@ -133,7 +130,7 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		} break;
 	}
 
-	SDL_BlitSurface(textSurface, NULL, surface, &dst);
+	SDL_BlitSurface(textOutlineSurface, NULL, surface, &dst);
 
 	SDL_DestroySurface(surface);
 	SDL_DestroySurface(textSurface);
@@ -403,7 +400,6 @@ auto GUI::InitRenderer() -> void {
 }
 
 auto GUI::Shutdown() -> void {
-
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL3_Shutdown();
 	ImGui::DestroyContext();
@@ -412,6 +408,7 @@ auto GUI::Shutdown() -> void {
 	SDL_DestroyWindow(mWindow);
 
 	TTF_CloseFont(mFont);
+	TTF_CloseFont(mFontOutline);
 
 	TTF_Quit();
 	SDL_Quit();
@@ -512,6 +509,7 @@ auto GUI::UpdateWallpaperTexture() -> void {
 }
 
 auto GUI::LoadFreeImageAsTexture(const fs::path &wallpaperPath) -> GLuint {
+	return 0;
 	FIBITMAP *bitmap = Util::LoadImage(wallpaperPath);
 	FIBITMAP *converted = FreeImage_ConvertTo32Bits(bitmap);
 	FreeImage_Unload(bitmap);

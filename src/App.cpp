@@ -156,6 +156,10 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 		log->info("Kein Legitimes Wallpaper. {} {}", __FUNCTION__, wallpaperPath.string());
 		return;
 	}
+
+	FIBITMAP *bitmap = nullptr;
+	FIBITMAP *tempBitmap = nullptr;
+
 	auto now = std::chrono::steady_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - mLastChange);
 
@@ -167,9 +171,14 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	if (!fs::exists(outputDir)) {
 		fs::create_directory(outputDir);
 	}
+	bitmap = Util::LoadImage(wallpaperPath);
+	if (!bitmap) log->error("Bild konnte nicht geladen werden");
 
-	auto bitmap = Util::LoadImage(wallpaperPath);
-	bitmap = FreeImage_ConvertTo32Bits(bitmap);
+	tempBitmap = FreeImage_ConvertTo32Bits(bitmap);
+	FreeImage_Unload(bitmap);
+	bitmap = tempBitmap;
+	tempBitmap = nullptr;
+
 	if (FreeImage_GetWidth(bitmap) != 1920)
 		bitmap = FreeImage_Rescale(bitmap, 1920, 1080);
 	if (!bitmap) {

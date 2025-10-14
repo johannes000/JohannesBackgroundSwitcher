@@ -1,15 +1,17 @@
 #pragma once
 
-#include "Includes.hpp"
 #include "FreeImage.h"
+#include "Includes.hpp"
 
-#include <unordered_set>
 #include <filesystem>
+#include <unordered_set>
 
 namespace fs = std::filesystem;
 namespace Util {
 constexpr inline auto IsImageFile(const fs::path &path) -> bool {
-	const std::unordered_set<std::string> extensions = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tga", ".gif"};
+	const std::unordered_set<std::string> extensions = {
+		".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tga", ".gif",
+		".JPG", ".JPEG", ".PNG", ".WEBP", ".BMP", ".TGA", ".GIF"};
 	return extensions.contains(path.extension().string());
 }
 

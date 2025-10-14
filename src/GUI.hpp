@@ -1,5 +1,6 @@
 #pragma once
 #include "FreeImage.h"
+
 #include "utility\Includes.hpp"
 
 #include <future>

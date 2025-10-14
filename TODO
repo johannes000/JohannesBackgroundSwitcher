@@ -10,13 +10,18 @@ Funktions:
     ✔ json Serializer @done(02-05-25)
     ✔ Checkboxen für Folder @done(02-05-25)
     ✔ Wechselfrequenz Settings auf dem Main Window @done(03-05-25)
+    ☐ Erstes Bild im WallpaperFolder als 100x100 preview im struct speichern.
     ☐ Wallpaper verbliebene Zeit mit timestamps bestimmen (nicht mit Counter).
     ☐ Wallpaper Orig Seitenverhältniss beibehalten, Mit Setting Anpassung Aussuchen
         - Zentrieren
         - Strecken
         - Strecken, Blur Hintergrung
     ☐ Rechtsklick auf Folder
-        ☐ Löschen
+        ☐ Kopiere zu Gruppe >
+        ☐ Move zu Gruppe >
+        ☐ Löschen >
+            - Global
+            - Gruppe
         ☐ Bearbeiten -> Neuer FileDialog?
     ✔ Tasten Kombo zum wechseln @high @done(05-05-25)
     ☐ Ins Tray Minimieren

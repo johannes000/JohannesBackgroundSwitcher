@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utility/BS_thread_pool.hpp" // IWYU pragma: keep
-#include "utility/Includes.hpp"		  // IWYU pragma: keep
+#include "BS_thread_pool.hpp"	// IWYU pragma: keep
+#include "utility/Includes.hpp" // IWYU pragma: keep
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/chrono.hpp>

@@ -31,7 +31,7 @@ include(cmake/warnings.cmake)
 include(FetchContent)
 include(cmake/CPM.cmake)
 include(cmake/CPMPackages.cmake)
-include(cmake/imgui.cmake)
+include(cmake/Renderer.cmake)
 include(cmake/freeimage.cmake)
 
 
@@ -67,18 +67,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
     ${CPM_PACKAGE_cereal_SOURCE_DIR}/include
     ${CPM_PACKAGE_FreeImage_SOURCE_DIR}/Source
-    ${CPM_PACKAGE_imgui_SOURCE_DIR}
     ${CPM_PACKAGE_nativefiledialog-extended_SOURCE_DIR}/src/include
-    ${CPM_PACKAGE_SDL_SOURCE_DIR}/include
-    ${CPM_PACKAGE_SDL_ttf_SOURCE_DIR}/include
     ${CPM_PACKAGE_spdlog_SOURCE_DIR}/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    imgui
-    opengl32
-    SDL3::SDL3
-    SDL3_ttf::SDL3_ttf
+    Renderer
     spdlog::spdlog
     FreeImage
     Platform

@@ -3,8 +3,6 @@
 #include "App.hpp"
 #include "nfd.hpp"
 
-#include <functional>
-
 namespace {
 bool show_demo_window = false;
 bool show_another_window = false;
@@ -102,7 +100,7 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		return;
 	}
 
-	SDL_Rect outlineDest = {0, 1, textSurface->w, textSurface->h};
+	SDL_Rect outlineDest = {1, 1, textSurface->w, textSurface->h};
 	SDL_SetSurfaceBlendMode(textSurface, SDL_BLENDMODE_BLEND);
 	SDL_BlitSurface(textSurface, NULL, textOutlineSurface, &outlineDest);
 

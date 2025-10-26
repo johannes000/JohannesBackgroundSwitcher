@@ -52,8 +52,9 @@ file(GLOB_RECURSE CORE_SOURCES
     src/main.cpp
     src/app_icon.rc
 
-    src/App.cpp src/App.hpp
-    src/GUI.cpp src/GUI.hpp
+    src/App.cpp       src/App.hpp
+    src/GUI.cpp       src/GUI.hpp
+    src/Settings.cpp  src/Settings.hpp
 )
 
 add_subdirectory(platform)

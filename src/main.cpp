@@ -5,6 +5,7 @@
 #include "App.hpp"
 #include "GUI.hpp"
 #include "Platform.hpp"
+#include "Settings.hpp"
 
 auto main(int, char **) -> i32 {
 	try {
@@ -14,6 +15,8 @@ auto main(int, char **) -> i32 {
 		Platform::RegisterWallpaperChangeHotkey();
 
 		FreeImage_Initialise();
+
+		Settings::Init();
 
 		auto app = std::make_unique<App>();
 		auto gui = std::make_unique<GUI>();

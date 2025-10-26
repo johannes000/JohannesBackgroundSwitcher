@@ -3,6 +3,7 @@ Funktions:
         ☐ Mit rechtsklick auf Folder checkboxen für Gruppen       
     ✔ Filedialog @high @done(01-08-25)
     ✔ cereal @high @done(01-08-25)
+        ☐ Settings und State in verschiedene Dateien speichern
     ✔ Main Loop in main.cpp verlagern @done(13-08-25)
     ✔ Hintergrund Einstellen @done(01-05-25)
     ✔ Timer für Hintergrund Wechseln @done(01-05-25)
@@ -10,7 +11,7 @@ Funktions:
     ✔ json Serializer @done(02-05-25)
     ✔ Checkboxen für Folder @done(02-05-25)
     ✔ Wechselfrequenz Settings auf dem Main Window @done(03-05-25)
-    ☐ Erstes Bild im WallpaperFolder als 100x100 preview im struct speichern.
+    ☐ Erstes Bild im WallpaperFolder als 100x100 preview speichern.
     ☐ Wallpaper verbliebene Zeit mit timestamps bestimmen (nicht mit Counter).
     ☐ Wallpaper Orig Seitenverhältniss beibehalten, Mit Setting Anpassung Aussuchen
         - Zentrieren
@@ -41,7 +42,8 @@ UI:
     ☐ Stil ausdenken
     ☐ Custom Titlebar
     ✔ Fenster schmall und non-Resizeable machen @done(19-05-25)
+    ☐ Suche unter/über der Folder Liste. Soll nur die Ordner zeigen die die zeichenkette beinhalten
 
 Bugs:
     ☐ Bug: Wenn alle Bilder bilder Blacklisted sind gibts Probleme
-    ☐ Hotkey Funktioniert nicht mehr
+    ✔ Hotkey Funktioniert nicht mehr @done(21-10-25)

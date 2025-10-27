@@ -7,14 +7,22 @@
 #include <cereal/types/chrono.hpp>
 #include <cereal/types/string.hpp>
 
-#define SETTINGS_DEFINITIONS                                \
-	SETTING(bool, RenderFilenameInBackground, false)        \
-	SETTING(i32, WallpaperIntervalInSeconds, 300 /*5 min*/) \
-                                                            \
-	SETTING(std::string, StatsPath, "./stats.json")         \
-	SETTING(std::string, SettingsPath, "./settings.json")   \
-	SETTING(std::string, DefaultSettingsPath, "")           \
-	SETTING(std::string, TTFFilePath, "./assets/font/Lato-Regular.ttf")
+#define SETTINGS_DEFINITIONS                                                        \
+	SETTING(bool, GUIRenderFilenameInBackground, true)                              \
+	SETTING(bool, GUIRenderFilenameInBackgroundOutline, true)                       \
+	SETTING(i32, WallpaperIntervalInSeconds, 300 /*5 min*/)                         \
+                                                                                    \
+	SETTING(i32, GUIWindowWidth, 700)                                               \
+	SETTING(i32, GUIWindowHeight, 720)                                              \
+                                                                                    \
+	SETTING(bool, GUIShowDemoWindow, false)                                         \
+	SETTING(bool, GUIShowAnotherWindow, false)                                      \
+                                                                                    \
+	SETTING(std::string, StatsPath, "./stats.json")                                 \
+	SETTING(std::string, SettingsPath, "./settings.json")                           \
+	SETTING(std::string, DefaultSettingsPath, "./settings.json")                    \
+	SETTING(std::string, LatoRegularFontFilePath, "./assets/font/Lato-Regular.ttf") \
+	SETTING(f32, TTFFontSize, 20.f)
 
 enum class Setting {
 #define SETTING(type, name, default) name,
@@ -42,7 +50,7 @@ public:
 	auto LoadFromFile(fs::path path = "./settings.json") -> void;
 
 	template <Setting S>
-	constexpr auto Get() const -> const auto &;
+	constexpr auto Get() -> auto &;
 
 	template <Setting S>
 	constexpr auto Set(const auto &value) -> void;
@@ -64,19 +72,31 @@ private:
 };
 
 template <Setting S>
-constexpr auto Settings::Get() const -> const auto & {
-	if constexpr (S == Setting::RenderFilenameInBackground) {
-		return mRenderFilenameInBackground;
+constexpr auto Settings::Get() -> auto & {
+	if constexpr (S == Setting::GUIRenderFilenameInBackground) {
+		return mGUIRenderFilenameInBackground;
+	} else if constexpr (S == Setting::GUIRenderFilenameInBackgroundOutline) {
+		return mGUIRenderFilenameInBackgroundOutline;
 	} else if constexpr (S == Setting::WallpaperIntervalInSeconds) {
 		return mWallpaperIntervalInSeconds;
 	} else if constexpr (S == Setting::StatsPath) {
 		return mStatsPath;
+	} else if constexpr (S == Setting::GUIWindowWidth) {
+		return mGUIWindowWidth;
+	} else if constexpr (S == Setting::GUIWindowHeight) {
+		return mGUIWindowHeight;
+	} else if constexpr (S == Setting::GUIShowAnotherWindow) {
+		return mGUIShowAnotherWindow;
+	} else if constexpr (S == Setting::GUIShowDemoWindow) {
+		return mGUIShowDemoWindow;
 	} else if constexpr (S == Setting::SettingsPath) {
 		return mSettingsPath;
 	} else if constexpr (S == Setting::DefaultSettingsPath) {
 		return mDefaultSettingsPath;
-	} else if constexpr (S == Setting::TTFFilePath) {
-		return mTTFFilePath;
+	} else if constexpr (S == Setting::LatoRegularFontFilePath) {
+		return mLatoRegularFontFilePath;
+	} else if constexpr (S == Setting::TTFFontSize) {
+		return mTTFFontSize;
 	} else {
 		static_assert(!std::is_same_v<void, void>, "Unbekanntes Setting");
 	}
@@ -86,10 +106,12 @@ template <Setting S>
 constexpr auto Settings::Set(const auto &value) -> void {
 	bool changed = false;
 
-	// Explizite if-else Kette (zuverlässiger als Makro)
-	if constexpr (S == Setting::RenderFilenameInBackground) {
+	if constexpr (S == Setting::GUIRenderFilenameInBackground) {
 		changed = true;
-		mRenderFilenameInBackground = value;
+		mGUIRenderFilenameInBackground = value;
+	} else if constexpr (S == Setting::GUIRenderFilenameInBackgroundOutline) {
+		changed = true;
+		mGUIRenderFilenameInBackgroundOutline = value;
 	} else if constexpr (S == Setting::WallpaperIntervalInSeconds) {
 		changed = true;
 		mWallpaperIntervalInSeconds = value;
@@ -99,12 +121,26 @@ constexpr auto Settings::Set(const auto &value) -> void {
 	} else if constexpr (S == Setting::SettingsPath) {
 		changed = true;
 		mSettingsPath = value;
+	} else if constexpr (S == Setting::GUIWindowWidth) {
+		changed = true;
+		mGUIWindowWidth = value;
+	} else if constexpr (S == Setting::GUIWindowHeight) {
+		changed = true;
+		mGUIWindowHeight = value;
+	} else if constexpr (S == Setting::GUIShowAnotherWindow) {
+		changed = true;
+		mGUIShowAnotherWindow = value;
+	} else if constexpr (S == Setting::GUIShowDemoWindow) {
+		changed = true;
+		mGUIShowDemoWindow = value;
 	} else if constexpr (S == Setting::DefaultSettingsPath) {
+		// Nicht änderbar
+	} else if constexpr (S == Setting::LatoRegularFontFilePath) {
 		changed = true;
-		mDefaultSettingsPath = value;
-	} else if constexpr (S == Setting::TTFFilePath) {
+		mLatoRegularFontFilePath = value;
+	} else if constexpr (S == Setting::TTFFontSize) {
 		changed = true;
-		mTTFFilePath = value;
+		mTTFFontSize = value;
 	} else {
 		static_assert(!std::is_same_v<void, void>, "Unbekanntes Setting");
 	}
@@ -119,7 +155,7 @@ inline auto S() -> Settings & {
 }
 
 template <Setting S>
-constexpr auto GetSetting() -> const auto & {
+constexpr auto GetSetting() -> auto & {
 	return ::S().Get<S>();
 }
 

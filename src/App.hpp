@@ -68,10 +68,6 @@ public:
 	auto SetRandomWallpaper() -> void;
 	auto SetRandomWallpaperAsync() -> void;
 
-	auto SetWallpaperIntervalInMinutes(u32 minutes) -> void { mWallpaperInterval = std::chrono::minutes(minutes); };
-	auto SetWallpaperIntervalInSeconds(u32 seconds) -> void { mWallpaperInterval = std::chrono::minutes(seconds / 60); };
-	auto GetWallpaperInterval() const -> const auto & { return mWallpaperInterval; };
-	auto GetWallpaperInterval() -> auto & { return mWallpaperInterval; };
 	auto GetRemainingWallpaperIntervalTimeInS() const -> i32;
 
 public:
@@ -83,7 +79,6 @@ public:
 			// mWallpaperBlacklist,
 			mFolderBlacklist,
 			mCurrentWallpaper,
-			mWallpaperInterval,
 			mLastChange);
 	}
 
@@ -112,7 +107,6 @@ private:
 	LogPtr log = GetLogger("APP");
 	bool mRunning{true};
 
-	std::chrono::minutes mWallpaperInterval{5};
 	std::chrono::steady_clock::time_point mLastChange;
 
 	BS::thread_pool mThreadPool;

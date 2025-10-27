@@ -1,25 +1,20 @@
 #include "GUI.hpp"
 
 #include "App.hpp"
+#include "Settings.hpp"
 #include "nfd.hpp"
 
 namespace {
-bool show_demo_window = false;
-bool show_another_window = false;
-ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-i32 WindowWidth = 700;
-i32 WindowHeight = 720;
+ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 constexpr f32 FOLDERPANEL_SIZE_FAKTOR = 1.f / 3.f;
 
-constexpr std::array<i32, 10> intervals{1, 2, 5, 10, 30, 1 * 60, 2 * 60, 5 * 60, 10 * 60, 24 * 60};
+// Intervals in Sec
+constexpr std::array<i32, 10> intervals{1 * 60, 2 * 60, 5 * 60, 10 * 60, 30 * 60, 1 * 60 * 60, 2 * 60 * 60, 5 * 60 * 60, 10 * 60 * 60, 24 * 60};
 constexpr std::array<const char *, 10> intervalStrings{"1 min", "2 min", "5 min", "10 min", "30 min", "1 hour", "2 hours", "5 hours", "10 hours", "24 hours"};
 
-const fs::path TTFFontPath = "./assets/font/Lato-Regular.ttf";
-constexpr f32 TTFFontSize = 20.f;
-
-namespace Settings {
+namespace LocalSettings {
 i32 PrintTextPaddingVertical = 5;
 i32 PrintTextPaddingHorizontal = 5;
 enum struct PrintTextPositions { Top_Left,
@@ -27,8 +22,7 @@ enum struct PrintTextPositions { Top_Left,
 								 Bottom_Left,
 								 Bottom_Right };
 PrintTextPositions PrintTextPosition{PrintTextPositions::Top_Right};
-bool PrintTextOutline = true;
-}; // namespace Settings
+}; // namespace LocalSettings
 
 } // namespace
 
@@ -82,7 +76,9 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		return;
 	}
 	SDL_FlipSurface(textSurface, SDL_FLIP_VERTICAL);
-	SDL_FlipSurface(textOutlineSurface, SDL_FLIP_VERTICAL);
+
+	if (GetSetting<Setting::GUIRenderFilenameInBackgroundOutline>())
+		SDL_FlipSurface(textOutlineSurface, SDL_FLIP_VERTICAL);
 
 	i32 width = FreeImage_GetWidth(bitmap);
 	i32 height = FreeImage_GetHeight(bitmap);
@@ -105,26 +101,26 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 	SDL_BlitSurface(textSurface, NULL, textOutlineSurface, &outlineDest);
 
 	SDL_Rect dst = {0, surface->h, textOutlineSurface->w, textOutlineSurface->h};
-	switch (Settings::PrintTextPosition) {
-		case Settings::PrintTextPositions::Top_Left: {
-			dst.x = Settings::PrintTextPaddingHorizontal;
-			dst.y = surface->h - textOutlineSurface->h - Settings::PrintTextPaddingVertical;
+	switch (LocalSettings::PrintTextPosition) {
+		case LocalSettings::PrintTextPositions::Top_Left: {
+			dst.x = LocalSettings::PrintTextPaddingHorizontal;
+			dst.y = surface->h - textOutlineSurface->h - LocalSettings::PrintTextPaddingVertical;
 		} break;
-		case Settings::PrintTextPositions::Top_Right: {
-			dst.x = surface->w - textOutlineSurface->w - Settings::PrintTextPaddingHorizontal;
-			dst.y = surface->h - textOutlineSurface->h - Settings::PrintTextPaddingVertical;
+		case LocalSettings::PrintTextPositions::Top_Right: {
+			dst.x = surface->w - textOutlineSurface->w - LocalSettings::PrintTextPaddingHorizontal;
+			dst.y = surface->h - textOutlineSurface->h - LocalSettings::PrintTextPaddingVertical;
 		} break;
-		case Settings::PrintTextPositions::Bottom_Left: {
-			dst.x = Settings::PrintTextPaddingHorizontal;
-			dst.y = Settings::PrintTextPaddingVertical;
+		case LocalSettings::PrintTextPositions::Bottom_Left: {
+			dst.x = LocalSettings::PrintTextPaddingHorizontal;
+			dst.y = LocalSettings::PrintTextPaddingVertical;
 		} break;
-		case Settings::PrintTextPositions::Bottom_Right: {
-			dst.x = surface->w - textOutlineSurface->w - Settings::PrintTextPaddingHorizontal;
-			dst.y = Settings::PrintTextPaddingVertical;
+		case LocalSettings::PrintTextPositions::Bottom_Right: {
+			dst.x = surface->w - textOutlineSurface->w - LocalSettings::PrintTextPaddingHorizontal;
+			dst.y = LocalSettings::PrintTextPaddingVertical;
 		} break;
 		default: {
-			dst.x = Settings::PrintTextPaddingHorizontal;
-			dst.y = Settings::PrintTextPaddingVertical;
+			dst.x = LocalSettings::PrintTextPaddingHorizontal;
+			dst.y = LocalSettings::PrintTextPaddingVertical;
 		} break;
 	}
 
@@ -207,20 +203,20 @@ auto GUI::RenderMainWindow() -> void {
 
 		ImGui::SameLine();
 
-		static size_t currentInterval = 3;
+		static size_t currentIntervalID = 3;
 		for (size_t i = 0; i < intervals.size(); i++) {
-			if (mApp->GetWallpaperInterval() == std::chrono::minutes(intervals[i])) {
-				currentInterval = i;
+			if (GetSetting<Setting::WallpaperIntervalInSeconds>() == intervals[i]) {
+				currentIntervalID = i;
 				break;
 			}
 		}
 		f32 dropdownWidth = buttonRegionButtonWidth * 1 / 3 - ImGui::GetStyle().WindowPadding.x;
 
-		if (ImGui::BeginCombo("##SelectInterval", intervalStrings[currentInterval], ImGuiComboFlags_NoArrowButton)) {
+		if (ImGui::BeginCombo("##SelectInterval", intervalStrings[currentIntervalID], ImGuiComboFlags_NoArrowButton)) {
 			for (size_t i = 0; i < intervals.size(); i++) {
-				bool isSelected = (currentInterval == i);
+				bool isSelected = (currentIntervalID == i);
 				if (ImGui::Selectable(intervalStrings[i], isSelected, 0, ImVec2(dropdownWidth, 0))) {
-					mApp->SetWallpaperIntervalInMinutes(intervals[i]);
+					SetSetting<Setting::WallpaperIntervalInSeconds>(intervals[i]);
 					log->trace("Interval auf {} gesetzt", intervalStrings[i]);
 				}
 				if (isSelected) {
@@ -336,6 +332,8 @@ auto GUI::InitRenderer() -> void {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 	Uint32 window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN;
+	auto WindowWidth = GetSetting<Setting::GUIWindowWidth>();
+	auto WindowHeight = GetSetting<Setting::GUIWindowHeight>();
 	mWindow = SDL_CreateWindow(APP_NAME, WindowWidth, WindowHeight, window_flags);
 	if (mWindow == nullptr) {
 		throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
@@ -416,6 +414,8 @@ auto GUI::Init(App *app) -> void {
 	mApp = app;
 	InitRenderer();
 
+	fs::path TTFFontPath = GetSetting<Setting::LatoRegularFontFilePath>();
+	auto TTFFontSize = GetSetting<Setting::TTFFontSize>();
 	mFont = TTF_OpenFont(TTFFontPath.string().c_str(), TTFFontSize);
 	mFontOutline = TTF_OpenFont(TTFFontPath.string().c_str(), TTFFontSize);
 	if (!mFont || !mFontOutline) {
@@ -462,8 +462,8 @@ auto GUI::RenderDemoWindows() -> void {
 	(void)io;
 
 	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-	if (show_demo_window)
-		ImGui::ShowDemoWindow(&show_demo_window);
+	if (GetSetting<Setting::GUIShowDemoWindow>())
+		ImGui::ShowDemoWindow(&GetSetting<Setting::GUIShowDemoWindow>());
 
 	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
 	{
@@ -472,9 +472,9 @@ auto GUI::RenderDemoWindows() -> void {
 
 		ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
 
-		ImGui::Text("This is some useful text.");		   // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &show_another_window);
+		ImGui::Text("This is some useful text.");								   // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Demo Window", &GetSetting<Setting::GUIShowDemoWindow>()); // Edit bools storing our window open/close state
+		ImGui::Checkbox("Another Window", &GetSetting<Setting::GUIShowAnotherWindow>());
 
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);			 // Edit 1 float using a slider from 0.0f to 1.0f
 		ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
@@ -489,11 +489,11 @@ auto GUI::RenderDemoWindows() -> void {
 	}
 
 	// 3. Show another simple window.
-	if (show_another_window) {
-		ImGui::Begin("Another Window", &show_another_window); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+	if (GetSetting<Setting::GUIShowAnotherWindow>()) {
+		ImGui::Begin("Another Window", &GetSetting<Setting::GUIShowAnotherWindow>()); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 		ImGui::Text("Hello from another window!");
 		if (ImGui::Button("Close Me"))
-			show_another_window = false;
+			GetSetting<Setting::GUIShowAnotherWindow>() = false;
 		ImGui::End();
 	}
 }

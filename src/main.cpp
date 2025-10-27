@@ -18,9 +18,6 @@ auto main(int, char **) -> i32 {
 
 		Settings::Init();
 
-		SetSetting<Setting::WallpaperIntervalInSeconds>(299);
-		log->info("{} Interval", GetSetting<Setting::WallpaperIntervalInSeconds>());
-
 		auto app = std::make_unique<App>();
 		auto gui = std::make_unique<GUI>();
 

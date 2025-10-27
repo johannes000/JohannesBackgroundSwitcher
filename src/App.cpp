@@ -32,7 +32,7 @@ auto App::HandleCounts(const fs::path &path) -> void {
 }
 
 auto App::GetRemainingWallpaperIntervalTimeInS() const -> i32 {
-	return std::chrono::duration_cast<std::chrono::seconds>(mWallpaperInterval).count() -
+	return GetSetting<Setting::WallpaperIntervalInSeconds>() -
 		   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - mLastChange).count();
 }
 
@@ -108,8 +108,9 @@ auto App::Update() -> void {
 
 	auto now = std::chrono::steady_clock::now();
 	auto elapsed = now - mLastChange;
+	std::chrono::seconds chronoInterval{GetSetting<Setting::WallpaperIntervalInSeconds>()};
 
-	if (elapsed > mWallpaperInterval) {
+	if (elapsed > chronoInterval) {
 		SetRandomWallpaperAsync();
 		mLastChange = now;
 	}
@@ -197,7 +198,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 		}
 	}
 
-	if (Settings2::RenderFilename) {
+	if (GetSetting<Setting::GUIRenderFilenameInBackground>()) {
 		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
 	}
 

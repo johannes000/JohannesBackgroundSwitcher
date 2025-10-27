@@ -109,7 +109,7 @@ private:
 
 	fs::path mCurrentWallpaper;
 
-	LogPtr log = AddLogger("APP");
+	LogPtr log = GetLogger("APP");
 	bool mRunning{true};
 
 	std::chrono::minutes mWallpaperInterval{5};

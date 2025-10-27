@@ -2,6 +2,7 @@
 #include "App.hpp"
 #include "GUI.hpp"
 #include "Platform.hpp"
+#include "Settings.hpp"
 #include <SDL3/SDL.h>
 
 namespace {
@@ -9,12 +10,7 @@ i32 maxSelectionCount = 10;
 
 constexpr f64 PI = 3.14159265358979323846;
 
-constexpr const char *statsPath = "./stats.json";
-constexpr const char *settingsPath = "./settings.json";
-constexpr const char *defaultSettingsPath = "./default_settings.json";
-constexpr const char *ttfFilePath = "./assets/font/Lato-Regular.ttf";
-
-namespace Settings {
+namespace Settings2 {
 bool RenderFilename = true;
 }
 } // namespace
@@ -188,7 +184,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	}
 
 	if (FreeImage_GetWidth(bitmap) != 1920) {
-		FIBITMAP* rescaledBitmap = FreeImage_Rescale(bitmap, 1920, 1080);
+		FIBITMAP *rescaledBitmap = FreeImage_Rescale(bitmap, 1920, 1080);
 		FreeImage_Unload(bitmap);
 		bitmap = rescaledBitmap;
 	}
@@ -201,7 +197,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 		}
 	}
 
-	if (Settings::RenderFilename) {
+	if (Settings2::RenderFilename) {
 		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
 	}
 

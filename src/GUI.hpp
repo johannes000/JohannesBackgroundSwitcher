@@ -70,7 +70,7 @@ private:
 
 	App *mApp;
 
-	LogPtr log = AddLogger("GUI");
+	LogPtr log = GetLogger("GUI");
 
 	std::future<std::vector<fs::path>> mFoldersFuture;
 	std::atomic<bool> mIsFileDialogOpen{false};

@@ -4,7 +4,7 @@
 #include "Platform.hpp"
 
 namespace Platform {
-auto log = AddLogger("WIN");
+auto log = GetLogger("WIN");
 
 auto OpenFileDialogue() -> fs::path {
 	return "C:/Wallpaper/Test";

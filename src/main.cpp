@@ -10,13 +10,16 @@
 auto main(int, char **) -> i32 {
 	try {
 		bool isRunning = true;
-		auto log = AddLogger("MAIN");
+		auto log = GetLogger("MAIN");
 
 		Platform::RegisterWallpaperChangeHotkey();
 
 		FreeImage_Initialise();
 
 		Settings::Init();
+
+		SetSetting<Setting::WallpaperIntervalInSeconds>(299);
+		log->info("{} Interval", GetSetting<Setting::WallpaperIntervalInSeconds>());
 
 		auto app = std::make_unique<App>();
 		auto gui = std::make_unique<GUI>();

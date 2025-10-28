@@ -3,7 +3,7 @@ Funktions:
         ☐ Mit rechtsklick auf Folder checkboxen für Gruppen       
     ✔ Filedialog @high @done(01-08-25)
     ✔ cereal @high @done(01-08-25)
-        ☐ Settings und State in verschiedene Dateien speichern
+        ✔ Settings und State in verschiedene Dateien speichern @done(28-10-25)
     ✔ Main Loop in main.cpp verlagern @done(13-08-25)
     ✔ Hintergrund Einstellen @done(01-05-25)
     ✔ Timer für Hintergrund Wechseln @done(01-05-25)
@@ -38,6 +38,8 @@ Funktions:
     ✔ n-Bildschirme Hintergründe @done(28-10-25)
     ☐ mit Versionierung anfangen
     ☐ Bildschirmgrößen rausfinden
+    ✔ Wegen ImGui auf einfachere Settings umsteigen. @done(28-10-25)
+        ✔ periodisch testen ob sich was geändert hat und Lokale .json updaten @done(28-10-25)
 
 UI:
     ☐ Stil ausdenken

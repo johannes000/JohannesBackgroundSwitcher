@@ -1,7 +1,9 @@
 #include "Settings.hpp"
+#include <fstream>
 
 namespace {
 Settings *Instance = nullptr;
+
 } // namespace
 
 Settings::Settings() {
@@ -20,22 +22,123 @@ auto Settings::Init() -> void {
 	Instance = new Settings();
 
 	Instance->log = GetLogger("SET");
+
+	Instance->LoadFromFile();
+
+	Instance->mLastAutosave = std::chrono::steady_clock::now();
 }
 
 auto Settings::Shutdown() -> void {
+	SaveToFile();
 	if (Instance) {
 		delete Instance;
 		Instance = nullptr;
 	}
 }
 
+auto Settings::MarkDirty() -> void {
+	mDirty = true;
+	mLastAutosave = std::chrono::steady_clock::now();
+}
+
+auto Settings::CheckIfDirty() -> void {
+	if (mDirty) return;
+
+#define SETTING(type, name, default)      \
+	if (m##name != ShadowSettings.name) { \
+		mDirty = true;                    \
+		return;                           \
+	}
+
+	SETTINGS_DEFINITIONS
+#undef SETTING
+}
+
+auto Settings::AutoSaveIfDirty() -> void {
+	auto now = std::chrono::steady_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - Instance->mLastAutosave);
+
+	if (elapsed.count() >= Instance->mSettingAutoSaveIntervalInSec) {
+		Instance->mLastAutosave = now;
+		Instance->CheckIfDirty();
+
+		if (Instance->mDirty) {
+			Instance->UpdateShadowData();
+			Instance->SaveToFile();
+		}
+	}
+}
+
+auto Settings::UpdateShadowData() -> void {
+#define SETTING(type, name, default) ShadowSettings.name = m##name;
+	SETTINGS_DEFINITIONS
+#undef SETTING
+}
+
 Settings::~Settings() {
 }
 
 auto Settings::SaveToFile(fs::path path) -> void {
-	log->info("Save Settings in {}", path.string());
+	try {
+		auto absolutePath = fs::absolute(path);
+		auto parentPath = absolutePath.parent_path();
+		if (!parentPath.empty() && !fs::exists(parentPath)) {
+			fs::create_directories(parentPath);
+			Instance->log->info("Verzeichniss erstellt {}", parentPath.string());
+		}
+
+		std::ofstream file(absolutePath);
+		if (!file.is_open()) {
+			Instance->log->error("Konnte die Datei nicht öffnen {}", absolutePath.string());
+			return;
+		}
+		cereal::JSONOutputArchive archive(file);
+		archive(cereal::make_nvp("Settings", *Instance));
+		Instance->mDirty = false;
+		Instance->log->info("Save Settings in {}", absolutePath.string());
+
+	} catch (const std::exception &e) {
+		Instance->log->error("Felher beim Speichern {}", e.what());
+	}
 };
 
 auto Settings::LoadFromFile(fs::path path) -> void {
-	log->info("Lade Settings aus {}", path.string());
+	try {
+		auto absolutePath = fs::absolute(path);
+		if (!fs::exists(absolutePath)) {
+			Instance->log->warn("Settings-Datei existiert nicht: {}, verwende Default Werte", absolutePath.string());
+
+			Instance->UpdateShadowData();
+
+			Instance->SaveToFile();
+			return;
+		}
+
+		std::ifstream file(absolutePath);
+		if (!file.is_open()) {
+			Instance->log->error("Konnte die Datei nicht öffnen {}", absolutePath.string());
+			return;
+		}
+
+		cereal::JSONInputArchive archive(file);
+		archive(cereal::make_nvp("Settings", *Instance));
+
+		Instance->UpdateShadowData();
+
+		Instance->mDirty = false;
+		Instance->log->info("Settings geladen aus {}", absolutePath.string());
+
+	} catch (const std::exception &e) {
+		Instance->log->error("Felher beim Laden {}", e.what());
+		Instance->log->warn("Verwende Default Werte");
+
+		Instance->SaveToFile();
+	}
 };
+
+auto Settings::ChangeToDefault() -> void {
+#define SETTING(type, name, default) Instance->m##name = default;
+	SETTINGS_DEFINITIONS
+#undef SETTING
+	Instance->UpdateShadowData();
+}

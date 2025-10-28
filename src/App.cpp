@@ -32,7 +32,7 @@ auto App::HandleCounts(const fs::path &path) -> void {
 }
 
 auto App::GetRemainingWallpaperIntervalTimeInS() const -> i32 {
-	return GetSetting<Setting::WallpaperIntervalInSeconds>() -
+	return Setting<WallpaperIntervalInSeconds>() -
 		   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - mLastChange).count();
 }
 
@@ -108,10 +108,10 @@ auto App::Update() -> void {
 
 	auto now = std::chrono::steady_clock::now();
 	auto elapsed = now - mLastChange;
-	std::chrono::seconds chronoInterval{GetSetting<Setting::WallpaperIntervalInSeconds>()};
+	std::chrono::seconds chronoInterval{Setting<WallpaperIntervalInSeconds>()};
 
 	if (elapsed > chronoInterval) {
-		SetRandomWallpaperAsync();
+		SetRandomWallpaper();
 		mLastChange = now;
 	}
 }
@@ -198,7 +198,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		}
 	}
 
-	if (GetSetting<Setting::GUIRenderFilenameInBackground>()) {
+	if (Setting<GUIRenderFilenameInBackground>()) {
 		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
 	}
 
@@ -263,7 +263,7 @@ auto App::GetRandomWallpaperAsync() -> void {
 
 auto App::SetRandomWallpaper() -> void {
 	auto monCount = Platform::GetMonitorCount();
-	if (GetSetting<Setting::SeperateWallpapersForEachMonitor>() && monCount > 1) {
+	if (Setting<SeperateWallpapersForEachMonitor>() && monCount > 1) {
 		for (u32 i = 0; i < monCount; i++) {
 			SetWallpaper(GetRandomWallpaper(), i);
 		}

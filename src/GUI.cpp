@@ -77,7 +77,7 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 	}
 	SDL_FlipSurface(textSurface, SDL_FLIP_VERTICAL);
 
-	if (GetSetting<Setting::GUIRenderFilenameInBackgroundOutline>())
+	if (Setting<GUIRenderFilenameInBackgroundOutline>())
 		SDL_FlipSurface(textOutlineSurface, SDL_FLIP_VERTICAL);
 
 	i32 width = FreeImage_GetWidth(bitmap);
@@ -205,7 +205,7 @@ auto GUI::RenderMainWindow() -> void {
 
 		static size_t currentIntervalID = 3;
 		for (size_t i = 0; i < intervals.size(); i++) {
-			if (GetSetting<Setting::WallpaperIntervalInSeconds>() == intervals[i]) {
+			if (Setting<WallpaperIntervalInSeconds>() == intervals[i]) {
 				currentIntervalID = i;
 				break;
 			}
@@ -216,7 +216,7 @@ auto GUI::RenderMainWindow() -> void {
 			for (size_t i = 0; i < intervals.size(); i++) {
 				bool isSelected = (currentIntervalID == i);
 				if (ImGui::Selectable(intervalStrings[i], isSelected, 0, ImVec2(dropdownWidth, 0))) {
-					SetSetting<Setting::WallpaperIntervalInSeconds>(intervals[i]);
+					Setting<WallpaperIntervalInSeconds>() = intervals[i];
 					log->trace("Interval auf {} gesetzt", intervalStrings[i]);
 				}
 				if (isSelected) {
@@ -332,8 +332,8 @@ auto GUI::InitRenderer() -> void {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 	Uint32 window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN;
-	auto WindowWidth = GetSetting<Setting::GUIWindowWidth>();
-	auto WindowHeight = GetSetting<Setting::GUIWindowHeight>();
+	auto WindowWidth = Setting<GUIWindowWidth>();
+	auto WindowHeight = Setting<GUIWindowHeight>();
 	mWindow = SDL_CreateWindow(APP_NAME, WindowWidth, WindowHeight, window_flags);
 	if (mWindow == nullptr) {
 		throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
@@ -414,10 +414,10 @@ auto GUI::Init(App *app) -> void {
 	mApp = app;
 	InitRenderer();
 
-	fs::path TTFFontPath = GetSetting<Setting::LatoRegularFontFilePath>();
-	auto TTFFontSize = GetSetting<Setting::TTFFontSize>();
-	mFont = TTF_OpenFont(TTFFontPath.string().c_str(), TTFFontSize);
-	mFontOutline = TTF_OpenFont(TTFFontPath.string().c_str(), TTFFontSize);
+	fs::path TTFFontPath = Setting<LatoRegularFontFilePath>();
+	f32 FontSize = Setting<TTFFontSize>();
+	mFont = TTF_OpenFont(TTFFontPath.string().c_str(), FontSize);
+	mFontOutline = TTF_OpenFont(TTFFontPath.string().c_str(), FontSize);
 	if (!mFont || !mFontOutline) {
 		log->error("Fehler beim Font laden.");
 	} else {
@@ -462,8 +462,8 @@ auto GUI::RenderDemoWindows() -> void {
 	(void)io;
 
 	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-	if (GetSetting<Setting::GUIShowDemoWindow>())
-		ImGui::ShowDemoWindow(&GetSetting<Setting::GUIShowDemoWindow>());
+	if (Setting<GUIShowDemoWindow>())
+		ImGui::ShowDemoWindow(&Setting<GUIShowDemoWindow>());
 
 	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
 	{
@@ -472,9 +472,9 @@ auto GUI::RenderDemoWindows() -> void {
 
 		ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
 
-		ImGui::Text("This is some useful text.");								   // Display some text (you can use a format strings too)
-		ImGui::Checkbox("Demo Window", &GetSetting<Setting::GUIShowDemoWindow>()); // Edit bools storing our window open/close state
-		ImGui::Checkbox("Another Window", &GetSetting<Setting::GUIShowAnotherWindow>());
+		ImGui::Text("This is some useful text.");					   // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Demo Window", &Setting<GUIShowDemoWindow>()); // Edit bools storing our window open/close state
+		ImGui::Checkbox("Another Window", &Setting<GUIShowAnotherWindow>());
 
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);			 // Edit 1 float using a slider from 0.0f to 1.0f
 		ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
@@ -489,11 +489,11 @@ auto GUI::RenderDemoWindows() -> void {
 	}
 
 	// 3. Show another simple window.
-	if (GetSetting<Setting::GUIShowAnotherWindow>()) {
-		ImGui::Begin("Another Window", &GetSetting<Setting::GUIShowAnotherWindow>()); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+	if (Setting<GUIShowAnotherWindow>()) {
+		ImGui::Begin("Another Window", &Setting<GUIShowAnotherWindow>()); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 		ImGui::Text("Hello from another window!");
 		if (ImGui::Button("Close Me"))
-			GetSetting<Setting::GUIShowAnotherWindow>() = false;
+			Setting<GUIShowAnotherWindow>() = false;
 		ImGui::End();
 	}
 }

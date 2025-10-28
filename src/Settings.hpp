@@ -21,9 +21,10 @@
                                                                                     \
 	SETTING(std::string, StatsPath, "./stats.json")                                 \
 	SETTING(std::string, SettingsPath, "./settings.json")                           \
-	SETTING(std::string, DefaultSettingsPath, "./settings.json")                    \
 	SETTING(std::string, LatoRegularFontFilePath, "./assets/font/Lato-Regular.ttf") \
-	SETTING(f32, TTFFontSize, 20.f)
+	SETTING(f32, TTFFontSize, 20.f)                                                 \
+                                                                                    \
+	SETTING(i32, SettingAutoSaveIntervalInSec, 100)
 
 enum class Setting {
 #define SETTING(type, name, default) name,
@@ -32,7 +33,13 @@ enum class Setting {
 };
 
 class Settings {
-public:
+private:
+	struct ShadowData {
+#define SETTING(type, name, default) type name = default;
+		SETTINGS_DEFINITIONS
+#undef SETTING
+	} ShadowSettings;
+
 private:
 	Settings();
 	~Settings();
@@ -47,14 +54,15 @@ public:
 	static auto Init() -> void;
 	static auto Shutdown() -> void;
 
-	auto SaveToFile(fs::path path = "./settings.json") -> void;
-	auto LoadFromFile(fs::path path = "./settings.json") -> void;
+	static auto AutoSaveIfDirty() -> void;
+
+	static auto SaveToFile(fs::path path = "./settings.json") -> void;
+	static auto LoadFromFile(fs::path path = "./settings.json") -> void;
+
+	static auto ChangeToDefault() -> void;
 
 	template <Setting S>
 	constexpr auto Get() -> auto &;
-
-	template <Setting S>
-	constexpr auto Set(const auto &value) -> void;
 
 	template <class Archive>
 	void serialize(Archive &archive) {
@@ -65,12 +73,25 @@ public:
 
 private:
 	LogPtr log;
+	bool mDirty = false;
+	std::chrono::steady_clock::time_point mLastAutosave;
+
+private:
+	auto MarkDirty() -> void;
+	auto CheckIfDirty() -> void;
+	auto UpdateShadowData() -> void;
 
 // Member vars
 #define SETTING(type, name, default) type m##name = default;
 	SETTINGS_DEFINITIONS
 #undef SETTING
 };
+
+#define SETTING(type, name, default) constexpr Setting name = Setting::name;
+SETTINGS_DEFINITIONS
+#undef SETTING
+
+	;
 
 template <Setting S>
 constexpr auto Settings::Get() -> auto & {
@@ -94,8 +115,6 @@ constexpr auto Settings::Get() -> auto & {
 		return mGUIShowDemoWindow;
 	} else if constexpr (S == Setting::SettingsPath) {
 		return mSettingsPath;
-	} else if constexpr (S == Setting::DefaultSettingsPath) {
-		return mDefaultSettingsPath;
 	} else if constexpr (S == Setting::LatoRegularFontFilePath) {
 		return mLatoRegularFontFilePath;
 	} else if constexpr (S == Setting::TTFFontSize) {
@@ -105,67 +124,11 @@ constexpr auto Settings::Get() -> auto & {
 	}
 }
 
-template <Setting S>
-constexpr auto Settings::Set(const auto &value) -> void {
-	bool changed = false;
-
-	if constexpr (S == Setting::GUIRenderFilenameInBackground) {
-		changed = true;
-		mGUIRenderFilenameInBackground = value;
-	} else if constexpr (S == Setting::GUIRenderFilenameInBackgroundOutline) {
-		changed = true;
-		mGUIRenderFilenameInBackgroundOutline = value;
-	} else if constexpr (S == Setting::WallpaperIntervalInSeconds) {
-		changed = true;
-		mWallpaperIntervalInSeconds = value;
-	} else if constexpr (S == Setting::StatsPath) {
-		changed = true;
-		mStatsPath = value;
-	} else if constexpr (S == Setting::SettingsPath) {
-		changed = true;
-		mSettingsPath = value;
-	} else if constexpr (S == Setting::GUIWindowWidth) {
-		changed = true;
-		mGUIWindowWidth = value;
-	} else if constexpr (S == Setting::GUIWindowHeight) {
-		changed = true;
-		mGUIWindowHeight = value;
-	} else if constexpr (S == Setting::GUIShowAnotherWindow) {
-		changed = true;
-		mGUIShowAnotherWindow = value;
-	} else if constexpr (S == Setting::GUIShowDemoWindow) {
-		changed = true;
-		mGUIShowDemoWindow = value;
-	} else if constexpr (S == Setting::DefaultSettingsPath) {
-		// Nicht änderbar
-	} else if constexpr (S == Setting::LatoRegularFontFilePath) {
-		changed = true;
-		mLatoRegularFontFilePath = value;
-	} else if constexpr (S == Setting::TTFFontSize) {
-		changed = true;
-		mTTFFontSize = value;
-	} else if constexpr (S == Setting::SeperateWallpapersForEachMonitor) {
-		changed = true;
-		mSeperateWallpapersForEachMonitor = value;
-	} else {
-		static_assert(!std::is_same_v<void, void>, "Unbekanntes Setting");
-	}
-
-	if (changed) {
-		SaveToFile();
-	}
-}
-
 inline auto S() -> Settings & {
 	return Settings::GetInstance();
 }
 
 template <Setting S>
-constexpr auto GetSetting() -> auto & {
-	return ::S().Get<S>();
-}
-
-template <Setting S>
-constexpr void SetSetting(const auto &value) {
-	::S().Set<S>(value);
+constexpr auto Setting() -> auto & {
+	return ::S().template Get<S>();
 }

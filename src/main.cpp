@@ -55,6 +55,7 @@ auto main(int, char **) -> i32 {
 			} else {
 				SDL_Delay(10);
 			}
+			Settings::AutoSaveIfDirty();
 		}
 
 		{
@@ -69,6 +70,7 @@ auto main(int, char **) -> i32 {
 		FreeImage_DeInitialise();
 
 		Platform::UnregisterWallpaperChangeHotkey();
+		Settings::Shutdown();
 
 		return 0;
 	} catch (const std::exception &e) {

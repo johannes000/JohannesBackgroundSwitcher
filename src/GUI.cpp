@@ -198,7 +198,7 @@ auto GUI::RenderMainWindow() -> void {
 			mIsFileDialogOpen = false;
 		}
 		if (ImGui::Button("Manual", ImVec2(buttonRegionButtonWidth * 2 / 3, 0))) {
-			mApp->SetRandomWallpaperAsync();
+			mApp->SetRandomWallpaper();
 		}
 
 		ImGui::SameLine();

@@ -12,11 +12,14 @@ auto main(int, char **) -> i32 {
 		bool isRunning = true;
 		auto log = GetLogger("MAIN");
 
+		Platform::Init();
 		Platform::RegisterWallpaperChangeHotkey();
 
 		FreeImage_Initialise();
 
 		Settings::Init();
+
+		log->info("mon count {}", Platform::GetMonitorCount());
 
 		auto app = std::make_unique<App>();
 		auto gui = std::make_unique<GUI>();
@@ -33,7 +36,7 @@ auto main(int, char **) -> i32 {
 
 			// Windows muss die Hotkeys zuerst checken sonst frisst SDL die Events.
 			if (Platform::CheckForWallpaperChangeHotkey() == Platform::HotkeyReaction::NEXT_WALLPAPER) {
-				app->SetRandomWallpaperAsync();
+				app->SetRandomWallpaper();
 			}
 
 			SDL_Event event;

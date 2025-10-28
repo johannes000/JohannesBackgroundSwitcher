@@ -4,6 +4,7 @@
 #include "utility/Includes.hpp" // IWYU pragma: keep
 
 #include <cereal/archives/binary.hpp>
+#include <cereal/types/array.hpp>
 #include <cereal/types/chrono.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/unordered_map.hpp>
@@ -13,6 +14,8 @@
 #include <chrono>
 #include <random>
 #include <unordered_set>
+
+constexpr i32 MAX_MONITOR_COUNT = 10;
 
 namespace cereal {
 template <class Archive>
@@ -62,7 +65,7 @@ public:
 	auto GetPathCount() const -> const auto & { return mPathUseCount; };
 	auto GetCurrentWallpaperPath() const -> const fs::path & { return mCurrentWallpaper; };
 
-	auto SetWallpaper(const fs::path &wallpaperPath) -> void;
+	auto SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr = 0) -> void;
 	auto GetRandomWallpaper() -> fs::path;
 	auto GetRandomWallpaperAsync() -> void;
 	auto SetRandomWallpaper() -> void;

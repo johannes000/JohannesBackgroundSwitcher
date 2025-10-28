@@ -11,6 +11,7 @@
 	SETTING(bool, GUIRenderFilenameInBackground, true)                              \
 	SETTING(bool, GUIRenderFilenameInBackgroundOutline, true)                       \
 	SETTING(i32, WallpaperIntervalInSeconds, 300 /*5 min*/)                         \
+	SETTING(bool, SeperateWallpapersForEachMonitor, true)                           \
                                                                                     \
 	SETTING(i32, GUIWindowWidth, 700)                                               \
 	SETTING(i32, GUIWindowHeight, 720)                                              \
@@ -81,6 +82,8 @@ constexpr auto Settings::Get() -> auto & {
 		return mWallpaperIntervalInSeconds;
 	} else if constexpr (S == Setting::StatsPath) {
 		return mStatsPath;
+	} else if constexpr (S == Setting::SeperateWallpapersForEachMonitor) {
+		return mSeperateWallpapersForEachMonitor;
 	} else if constexpr (S == Setting::GUIWindowWidth) {
 		return mGUIWindowWidth;
 	} else if constexpr (S == Setting::GUIWindowHeight) {
@@ -141,6 +144,9 @@ constexpr auto Settings::Set(const auto &value) -> void {
 	} else if constexpr (S == Setting::TTFFontSize) {
 		changed = true;
 		mTTFFontSize = value;
+	} else if constexpr (S == Setting::SeperateWallpapersForEachMonitor) {
+		changed = true;
+		mSeperateWallpapersForEachMonitor = value;
 	} else {
 		static_assert(!std::is_same_v<void, void>, "Unbekanntes Setting");
 	}

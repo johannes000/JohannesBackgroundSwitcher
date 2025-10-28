@@ -146,7 +146,7 @@ auto App::AddWallpaperFolder(const fs::path path, bool selected) -> void {
 auto App::RemoveWallpaperFolder(const fs::path /* path */) -> void {
 }
 
-auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
+auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 	if (!fs::exists(wallpaperPath) ||
 		fs::is_directory(wallpaperPath) ||
 		!Util::IsImageFile(wallpaperPath)) {
@@ -203,11 +203,11 @@ auto App::SetWallpaper(const fs::path &wallpaperPath) -> void {
 	}
 
 	log->info("bitmap size: {}", bitmap->data);
-	fs::path temp = outputDir / "1.bmp";
+	fs::path temp = outputDir / (std::to_string(monitorNr + 1) + ".bmp");
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
 	FreeImage_Unload(bitmap);
 
-	if (Platform::ChangeWallpaper(temp)) {
+	if (Platform::ChangeWallpaper(temp, monitorNr)) {
 		mCurrentWallpaper = wallpaperPath;
 		mLastChange = now;
 	}
@@ -262,7 +262,14 @@ auto App::GetRandomWallpaperAsync() -> void {
 }
 
 auto App::SetRandomWallpaper() -> void {
-	SetWallpaper(GetRandomWallpaper());
+	auto monCount = Platform::GetMonitorCount();
+	if (GetSetting<Setting::SeperateWallpapersForEachMonitor>() && monCount > 1) {
+		for (u32 i = 0; i < monCount; i++) {
+			SetWallpaper(GetRandomWallpaper(), i);
+		}
+	} else {
+		SetWallpaper(GetRandomWallpaper());
+	}
 }
 
 auto App::SetRandomWallpaperAsync() -> void {

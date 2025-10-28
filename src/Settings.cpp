@@ -2,8 +2,6 @@
 
 namespace {
 Settings *Instance = nullptr;
-
-std::string DefaultSettingsPath = "./default_settings.json";
 } // namespace
 
 Settings::Settings() {

@@ -14,12 +14,17 @@ auto main(int, char **) -> i32 {
 
 		Platform::Init();
 		Platform::RegisterWallpaperChangeHotkey();
+		auto r1 = Platform::GetMonitorResolution(0);
+		auto r2 = Platform::GetMonitorResolution(1);
+
+		log->info("Res {}x{} {}x{} ", r1.width, r1.height, r2.width, r2.height);
+		log->info("mon count {}", Platform::GetMonitorCount());
 
 		FreeImage_Initialise();
 
 		Settings::Init();
-
-		log->info("mon count {}", Platform::GetMonitorCount());
+		Setting<Setting::WallpaperPositionStyle>() = WallpaperPosition::Fit;
+		Platform::SetWallpaperPosition((i32)Setting<WallpaperPositionStyle>());
 
 		auto app = std::make_unique<App>();
 		auto gui = std::make_unique<GUI>();

@@ -13,10 +13,7 @@ Funktions:
     ✔ Wechselfrequenz Settings auf dem Main Window @done(03-05-25)
     ☐ Erstes Bild im WallpaperFolder als 100x100 preview speichern.
     ☐ Wallpaper verbliebene Zeit mit timestamps bestimmen (nicht mit Counter).
-    ☐ Wallpaper Orig Seitenverhältniss beibehalten, Mit Setting Anpassung Aussuchen
-        - Zentrieren
-        - Strecken
-        - Strecken, Blur Hintergrung
+    ✔ Wallpaper Orig Seitenverhältniss beibehalten, Mit Setting Anpassung Aussuchen @done(29-10-25)
     ☐ Rechtsklick auf Folder
         ☐ Kopiere zu Gruppe >
         ☐ Move zu Gruppe >
@@ -31,13 +28,13 @@ Funktions:
     ☐ Auf vorherige Wallper umschalten
     ☐ Settings Fenster
     ☐ Path Blacklist über Settings
-    ☐ Oben rechts im Bild den Namen printen
+    ✔ Oben rechts im Bild den Namen printen @done(29-10-25)
     ☐ Wenn Prog schon offen ist zur main Instanz switchen
     ☐ Unittests
     ☐ Weight für Oberste Ebene selbst bestimmen
     ✔ n-Bildschirme Hintergründe @done(28-10-25)
     ☐ mit Versionierung anfangen
-    ☐ Bildschirmgrößen rausfinden
+    ✔ Bildschirmgrößen rausfinden @done(29-10-25)
     ✔ Wegen ImGui auf einfachere Settings umsteigen. @done(28-10-25)
         ✔ periodisch testen ob sich was geändert hat und Lokale .json updaten @done(28-10-25)
 

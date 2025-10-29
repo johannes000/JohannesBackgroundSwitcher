@@ -12,6 +12,7 @@
 	SETTING(bool, GUIRenderFilenameInBackgroundOutline, true)                       \
 	SETTING(i32, WallpaperIntervalInSeconds, 300 /*5 min*/)                         \
 	SETTING(bool, SeperateWallpapersForEachMonitor, true)                           \
+	SETTING(WallpaperPosition, WallpaperPositionStyle, WallpaperPosition::Fit)      \
                                                                                     \
 	SETTING(i32, GUIWindowWidth, 700)                                               \
 	SETTING(i32, GUIWindowHeight, 720)                                              \
@@ -30,6 +31,15 @@ enum class Setting {
 #define SETTING(type, name, default) name,
 	SETTINGS_DEFINITIONS
 #undef SETTING
+};
+
+enum class WallpaperPosition : i32 {
+	Fit,
+	Fill,
+	Strech,
+	Tile,
+	Center,
+	Span
 };
 
 class Settings {
@@ -91,8 +101,6 @@ private:
 SETTINGS_DEFINITIONS
 #undef SETTING
 
-	;
-
 template <Setting S>
 constexpr auto Settings::Get() -> auto & {
 	if constexpr (S == Setting::GUIRenderFilenameInBackground) {
@@ -119,6 +127,8 @@ constexpr auto Settings::Get() -> auto & {
 		return mLatoRegularFontFilePath;
 	} else if constexpr (S == Setting::TTFFontSize) {
 		return mTTFFontSize;
+	} else if constexpr (S == Setting::WallpaperPositionStyle) {
+		return mWallpaperPositionStyle;
 	} else {
 		static_assert(!std::is_same_v<void, void>, "Unbekanntes Setting");
 	}

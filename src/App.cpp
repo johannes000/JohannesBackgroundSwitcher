@@ -184,11 +184,11 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		return;
 	}
 
-	if (FreeImage_GetWidth(bitmap) != 1920) {
-		FIBITMAP *rescaledBitmap = FreeImage_Rescale(bitmap, 1920, 1080);
-		FreeImage_Unload(bitmap);
-		bitmap = rescaledBitmap;
-	}
+	// if (FreeImage_GetWidth(bitmap) != 1920) {
+	// 	FIBITMAP *rescaledBitmap = FreeImage_Rescale(bitmap, 1920, 1080);
+	// 	FreeImage_Unload(bitmap);
+	// 	bitmap = rescaledBitmap;
+	// }
 
 	if (!bitmap) {
 		bitmap = Util::LoadImage(outputDir / "default.bmp");
@@ -202,7 +202,6 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
 	}
 
-	log->info("bitmap size: {}", bitmap->data);
 	fs::path temp = outputDir / (std::to_string(monitorNr + 1) + ".bmp");
 	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
 	FreeImage_Unload(bitmap);

@@ -23,10 +23,12 @@ Funktions:
         ☐ Bearbeiten -> Neuer FileDialog?
     ✔ Tasten Kombo zum wechseln @high @done(05-05-25)
     ☐ Ins Tray Minimieren
+        Traymenü:
+            - Close
+            - Change WP
     ✔ Blacklist für Bilder @done(02-05-25)
     ☐ Wallpaper History
     ☐ Auf vorherige Wallper umschalten
-    ☐ Settings Fenster
     ☐ Path Blacklist über Settings
     ✔ Oben rechts im Bild den Namen printen @done(29-10-25)
     ☐ Wenn Prog schon offen ist zur main Instanz switchen
@@ -38,9 +40,35 @@ Funktions:
     ✔ Wegen ImGui auf einfachere Settings umsteigen. @done(28-10-25)
         ✔ periodisch testen ob sich was geändert hat und Lokale .json updaten @done(28-10-25)
 
+Wallpapertext:
+    ☐ Position in Settings impl.
+    ☐ Fontsize soll abhängig von der Resolution sein
+
+
 UI:
     ☐ Stil ausdenken
     ☐ Custom Titlebar
+    ☐ Settings Widget @high
+        Wallpapers:
+            ☐ Interval
+            ☐ WAllpaperposition
+            - Diesen Teil immer anzeigen?
+        Interface:
+            ☐ Background on close -> Tray
+            ☐ Render if unfocused
+        Manage:
+            ☐ Import / Export Von Folders und Settings
+            ☐ Set alles default
+            ☐ Show Remove Button: Zeige remove button in Folderview sonst nur im Rechtsklick
+            ☐ Confirm when removing
+            ☐ Weighted Random Wallpaper Auswahl checkbox
+        Startup:
+            ☐ Start in BG
+            ☐ Start mit System
+        Tabs:
+            ☐ In allen Tabs suchen / Nur im aktuellen
+            ☐ Hide Empty tabs
+
     ✔ Fenster schmall und non-Resizeable machen @done(19-05-25)
     ☐ Suche unter/über der Folder Liste. Soll nur die Ordner zeigen die die zeichenkette beinhalten
 

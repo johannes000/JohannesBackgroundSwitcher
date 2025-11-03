@@ -67,8 +67,18 @@ auto GUI::Render() -> void {
 }
 
 auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
+	i32 width = FreeImage_GetWidth(bitmap);
+	i32 height = FreeImage_GetHeight(bitmap);
+	i32 freeImagePitch = FreeImage_GetPitch(bitmap);
+	BYTE *pixels = FreeImage_GetBits(bitmap);
+
+	f32 fontSize = ((f32)height / 1080.f) * Setting<Setting::TTFFontSize>();
+
+	TTF_SetFontSize(mFont, fontSize);
+	TTF_SetFontSize(mFontOutline, fontSize);
+
 	SDL_Color white = {255, 255, 255, 255};
-	SDL_Color black = {0, 0, 0, 0};
+	SDL_Color black = {0, 0, 0, 255};
 	SDL_Surface *textSurface = TTF_RenderText_Blended(mFont, text.c_str(), 0, white);
 	SDL_Surface *textOutlineSurface = TTF_RenderText_Blended(mFontOutline, text.c_str(), 0, black);
 	if (!textSurface || !textOutlineSurface) {
@@ -76,14 +86,7 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		return;
 	}
 	SDL_FlipSurface(textSurface, SDL_FLIP_VERTICAL);
-
-	if (Setting<GUIRenderFilenameInBackgroundOutline>())
-		SDL_FlipSurface(textOutlineSurface, SDL_FLIP_VERTICAL);
-
-	i32 width = FreeImage_GetWidth(bitmap);
-	i32 height = FreeImage_GetHeight(bitmap);
-	i32 freeImagePitch = FreeImage_GetPitch(bitmap);
-	BYTE *pixels = FreeImage_GetBits(bitmap);
+	SDL_FlipSurface(textOutlineSurface, SDL_FLIP_VERTICAL);
 
 	SDL_Surface *surface = SDL_CreateSurfaceFrom(
 		width, height,
@@ -124,7 +127,10 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		} break;
 	}
 
-	SDL_BlitSurface(textOutlineSurface, NULL, surface, &dst);
+	if (Setting<GUIRenderFilenameInBackgroundOutline>())
+		SDL_BlitSurface(textOutlineSurface, NULL, surface, &dst);
+	else
+		SDL_BlitSurface(textSurface, NULL, surface, &dst);
 
 	SDL_DestroySurface(surface);
 	SDL_DestroySurface(textSurface);

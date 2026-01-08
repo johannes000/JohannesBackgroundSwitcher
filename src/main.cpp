@@ -14,11 +14,6 @@ auto main(int, char **) -> i32 {
 
 		Platform::Init();
 		Platform::RegisterWallpaperChangeHotkey();
-		auto r1 = Platform::GetMonitorResolution(0);
-		auto r2 = Platform::GetMonitorResolution(1);
-
-		log->info("Res {}x{} {}x{} ", r1.width, r1.height, r2.width, r2.height);
-		log->info("mon count {}", Platform::GetMonitorCount());
 
 		FreeImage_Initialise();
 
@@ -38,7 +33,6 @@ auto main(int, char **) -> i32 {
 		gui->Init(app.get());
 
 		while (isRunning) {
-
 			// Windows muss die Hotkeys zuerst checken sonst frisst SDL die Events.
 			if (Platform::CheckForWallpaperChangeHotkey() == Platform::HotkeyReaction::NEXT_WALLPAPER) {
 				app->SetRandomWallpaper();
@@ -55,15 +49,33 @@ auto main(int, char **) -> i32 {
 
 			app->HandleEvents();
 			app->Update();
-			if (!(SDL_GetWindowFlags(gui->GetWindow()) & SDL_WINDOW_MINIMIZED)) {
-				gui->Render();
-			} else {
-				SDL_Delay(10);
+
+			static u64 lastSlowUpdate = 0;
+			u64 currentTime = SDL_GetTicks();
+			if (currentTime - lastSlowUpdate >= 1000) {
+				app->SlowUpdate();
+				Settings::AutoSaveIfDirty();
+
+				lastSlowUpdate = currentTime;
 			}
-			Settings::AutoSaveIfDirty();
+			u32 flags = SDL_GetWindowFlags(gui->GetWindow());
+			bool hasFocus = (flags & SDL_WINDOW_INPUT_FOCUS);
+			bool isMinimized = (flags & SDL_WINDOW_MINIMIZED);
+
+			if (isMinimized) {
+				SDL_Delay(200);
+			} else if (hasFocus) {
+				gui->Render();
+				SDL_Delay(5);
+			} else {
+				gui->Render();
+				// 30 FPS
+				SDL_Delay(32);
+			}
 		}
 
 		{
+			// Settings serialisieren
 			std::ofstream os("data.knaub", std::ios::binary);
 			cereal::BinaryOutputArchive archive(os);
 			archive(*app);

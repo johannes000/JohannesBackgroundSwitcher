@@ -93,6 +93,9 @@ auto App::FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path 
 }
 
 auto App::Update() -> void {
+}
+
+auto App::SlowUpdate() -> void {
 	if (mWallpaperLoading && mWallpaperFuture.valid()) {
 		if (mWallpaperFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
 			try {
@@ -143,7 +146,14 @@ auto App::AddWallpaperFolder(const fs::path path, bool selected) -> void {
 	std::sort(mWallpaperFolders.begin(), mWallpaperFolders.end(), [](WallpaperFolder a, WallpaperFolder b) -> bool { return a.path < b.path; });
 }
 
-auto App::RemoveWallpaperFolder(const fs::path /* path */) -> void {
+auto App::RemoveWallpaperFolder(const fs::path path) -> void {
+	auto find = std::find_if(mWallpaperFolders.begin(), mWallpaperFolders.end(), [&path](const WallpaperFolder &f) { return f.path == path; });
+	if (find != mWallpaperFolders.end()) {
+		mWallpaperFolders.erase(find);
+		log->info("{} entfernt.", path.string());
+	} else {
+		log->info("{} nicht entfernt weil nicht gefunden.", path.string());
+	}
 }
 
 auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
@@ -217,12 +227,15 @@ auto App::GetRandomWallpaper() -> fs::path {
 		log->info("Keine Ordner im System");
 		return "";
 	}
-	i32 a = 0;
 
+	// Selected Ordner Sammeln
 	std::vector<fs::path> eligible;
 	for (const auto &wf : mWallpaperFolders) {
 		if (wf.selected) {
-			eligible.push_back(wf.path);
+			if (fs::exists(wf.path) && fs::is_directory(wf.path))
+				eligible.push_back(wf.path);
+			else
+				RemoveWallpaperFolder(wf.path);
 		}
 	}
 
@@ -241,7 +254,7 @@ auto App::GetRandomWallpaper() -> fs::path {
 		if (!result.empty())
 			return result;
 	}
-	return "C:/Wallpaper/1.webp";
+	return "";
 }
 
 auto App::GetRandomWallpaperAsync() -> void {

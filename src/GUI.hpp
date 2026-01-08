@@ -39,6 +39,7 @@ public:
 	auto Shutdown() -> void;
 	auto HandleEvents() -> void;
 	auto Update() -> void;
+	auto SlowUpdate() -> void;
 	auto Render() -> void;
 
 	auto RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void;
@@ -69,6 +70,8 @@ private:
 	TTF_Font *mFontOutline;
 
 	App *mApp;
+
+	u32 mCurrentMonitorCount{1};
 
 	LogPtr log = GetLogger("GUI");
 

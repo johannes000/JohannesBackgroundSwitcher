@@ -1,6 +1,7 @@
 #include "GUI.hpp"
 
 #include "App.hpp"
+#include "Platform.hpp"
 #include "Settings.hpp"
 #include "nfd.hpp"
 
@@ -30,6 +31,10 @@ auto GUI::HandleEvents() -> void {
 }
 
 auto GUI::Update() -> void {
+}
+
+auto GUI::SlowUpdate() -> void {
+	mCurrentMonitorCount = Platform::GetMonitorCount();
 }
 
 auto GUI::Render() -> void {
@@ -137,7 +142,7 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 	SDL_DestroySurface(textOutlineSurface);
 }
 
-auto RenderFolderPathText(WallpaperFolder &folder) -> void {
+auto RenderFolderPathWithButtons(WallpaperFolder &folder) -> void {
 	ImGui::Checkbox(folder.path.string().c_str(), &folder.selected);
 	// for (const auto &pic : folder.picturePaths) {
 	// 	ImGui::Text("  %s%s", indent.c_str(), pic.filename().string().c_str());
@@ -145,8 +150,25 @@ auto RenderFolderPathText(WallpaperFolder &folder) -> void {
 }
 
 auto GUI::RenderMainWindow() -> void {
-	f32 panelWidth = ImGui::GetContentRegionAvail().x;
-	f32 buttonWidth = panelWidth - ImGui::GetStyle().WindowPadding.x * 2;
+	/*
+		_________________________________________
+		|				|						|
+		|FolderContent	|	Settings			|
+		|				|						|
+		-----------------------------------------
+		|				|						|
+		|				|						|
+		|   Aktuelles	|Aktuelles Wallpaper 2	|
+		|	Wallpaper	|Settings bei einem		|
+		|				|Bildschirm				|
+		|				|						|
+		|				|						|
+		_________________________________________
+	*/
+	// auto a = Platform::GetMonitorCount();
+
+	f32 windowWidth = ImGui::GetContentRegionAvail().x;
+	f32 windowHeight = ImGui::GetContentRegionAvail().y;
 
 	ImGui::Begin("##FolderContent",
 				 nullptr,
@@ -154,7 +176,7 @@ auto GUI::RenderMainWindow() -> void {
 					 ImGuiWindowFlags_NoDecoration);
 	{
 		for (auto &folder : mApp->GetWallpaperFolders()) {
-			RenderFolderPathText(folder);
+			RenderFolderPathWithButtons(folder);
 		}
 	}
 	ImGui::End();
@@ -430,6 +452,8 @@ auto GUI::Init(App *app) -> void {
 		log->debug("Font: {} erfolgreich geladen.", TTFFontPath.filename().string());
 	}
 	TTF_SetFontOutline(mFontOutline, 1);
+
+	mCurrentMonitorCount = Platform::GetMonitorCount();
 }
 
 auto GUI::EndFrame() -> void {

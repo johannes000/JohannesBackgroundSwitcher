@@ -20,12 +20,13 @@ inline LogPtr GetLogger(const std::string &name, spdlog::level::level_enum level
 	timestamp_stream << std::put_time(&now_tm, "%y%m%d%H%M");
 	std::string timestamp = timestamp_stream.str();
 
-	std::string filename = std::format("logs/sizedelete{}.log", timestamp);
+	std::string filename = std::format("logs/Wallpaper_{}.log", timestamp);
+	auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename);
 
 	auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 	console_sink->set_level(level);
 
-	std::vector<spdlog::sink_ptr> sinks = {console_sink};
+	std::vector<spdlog::sink_ptr> sinks = {console_sink, file_sink};
 	auto logger = std::make_shared<spdlog::logger>(name, sinks.begin(), sinks.end());
 	logger->set_level(spdlog::level::trace);
 

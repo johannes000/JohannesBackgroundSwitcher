@@ -53,6 +53,7 @@ public:
 	auto Shutdown() -> void;
 
 	auto Update() -> void;
+	auto SlowUpdate() -> void;
 	auto HandleEvents() -> void;
 
 	auto IsRunning() -> bool { return mRunning; }

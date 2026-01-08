@@ -42,7 +42,7 @@ Funktions:
 
 Wallpapertext:
     ☐ Position in Settings impl.
-    ☐ Fontsize soll abhängig von der Resolution sein
+    ✔ Fontsize soll abhängig von der Resolution sein @done(03-11-25)
 
 
 UI:

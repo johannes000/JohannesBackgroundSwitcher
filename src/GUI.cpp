@@ -271,8 +271,7 @@ auto GUI::RenderMainWindow() -> void {
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
 			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 			if (ImGui::Button(currentWallpaper.filename().string().c_str())) {
-				std::string cmd = "explorer /select,\"" + currentWallpaper.string() + "\"";
-				std::system(cmd.c_str());
+				Platform::OpenPathInDefaultApp(currentWallpaper.parent_path().string());
 			}
 			ImGui::PopStyleColor(2);
 			ImGui::PopStyleVar();
@@ -303,8 +302,7 @@ auto GUI::RenderMainWindow() -> void {
 					ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0),
 					ImVec4(1, 1, 1, 1))) {
 				if (!currentWallpaper.empty() && fs::exists(currentWallpaper.parent_path())) {
-					std::string cmd = "start \"\" \"" + currentWallpaper.string() + "\"";
-					std::system(cmd.c_str());
+					Platform::OpenPathInDefaultApp(currentWallpaper.string());
 				}
 			}
 		} else {

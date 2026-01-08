@@ -15,6 +15,7 @@ target_link_libraries(
     Platform
     # $<$<PLATFORM_ID:Windows>:user32>
     $<$<PLATFORM_ID:Windows>:ole32>
+    $<$<PLATFORM_ID:Windows>:Shell32>
     spdlog::spdlog
 )
 

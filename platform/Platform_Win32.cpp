@@ -1,7 +1,13 @@
-#include <Windows.h>
-// NOTE: Nur ab Win 8
-#include "Platform.hpp"
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
+#include <shellapi.h>
 #include <shobjidl.h>
+
+#include "Platform.hpp"
 
 namespace {
 IDesktopWallpaper *desktopWallpaper = nullptr;
@@ -67,8 +73,21 @@ auto UnregisterWallpaperChangeHotkey() -> void {
 // 		(void *)absolutePath.string().c_str(),
 // 		SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 // }
+auto OpenPathInDefaultApp(const std::filesystem::path &path) -> void {
+	HINSTANCE result = ShellExecuteW(
+		nullptr,
+		L"open",
+		path.c_str(),
+		nullptr,
+		nullptr,
+		SW_SHOWNORMAL);
 
-auto ChangeWallpaper(std::filesystem::path wallpaperPath, u32 monitorNr) -> bool {
+	if ((intptr_t)result <= 32) {
+		log->error("Bild konnte nicht geöffnet werden: {}", path.string());
+	}
+}
+
+auto ChangeWallpaper(const std::filesystem::path &wallpaperPath, u32 monitorNr) -> bool {
 	fs::path absolutePath = fs::absolute(wallpaperPath);
 	desktopWallpaper->SetPosition(DWPOS_FIT);
 
@@ -131,7 +150,7 @@ auto GetMonitorResolution(u32 monitorNr) -> MonitorResolution {
 	return resolution;
 }
 
-auto SetWallpaperPosition(i32 pos) -> void{
+auto SetWallpaperPosition(i32 pos) -> void {
 	// Fit,
 	// Fill,
 	// Strech,

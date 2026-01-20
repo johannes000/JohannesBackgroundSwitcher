@@ -25,7 +25,6 @@ auto RegisterWallpaperChangeHotkey() -> void;
 auto UnregisterWallpaperChangeHotkey() -> void;
 [[nodiscard]]
 auto CheckForWallpaperChangeHotkey() -> HotkeyReaction;
-[[nodiscard]]
 auto ChangeWallpaper(const std::filesystem::path &wallpaperPath, u32 monitorNr = 0) -> bool;
 auto GetMonitorCount() -> u32;
 auto GetMonitorResolution(u32 monitorNr) -> MonitorResolution;

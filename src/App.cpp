@@ -4,6 +4,7 @@
 #include "Platform.hpp"
 #include "Settings.hpp"
 #include <SDL3/SDL.h>
+#include <algorithm>
 
 namespace {
 i32 maxSelectionCount = 10;
@@ -33,7 +34,7 @@ auto App::HandleCounts(const fs::path &path) -> void {
 
 auto App::GetRemainingWallpaperIntervalTimeInS() const -> i32 {
 	return Setting<WallpaperIntervalInSeconds>() -
-		   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - mLastChange).count();
+		   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - mMonitorStates[0].lastChange).count();
 }
 
 auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
@@ -96,26 +97,22 @@ auto App::Update() -> void {
 }
 
 auto App::SlowUpdate() -> void {
-	if (mWallpaperLoading && mWallpaperFuture.valid()) {
-		if (mWallpaperFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-			try {
-				fs::path wallpaper = mWallpaperFuture.get();
-				if (!wallpaper.empty())
-					SetWallpaper(wallpaper);
-			} catch (const std::exception &e) {
-				log->error("Fehler beim Async Wallpaper wechsel: {}", e.what());
-			}
-			mWallpaperLoading = false;
-		}
-	}
-
 	auto now = std::chrono::steady_clock::now();
-	auto elapsed = now - mLastChange;
-	std::chrono::seconds chronoInterval{Setting<WallpaperIntervalInSeconds>()};
+	i32 interval = Setting<WallpaperIntervalInSeconds>();
+	bool separate = Setting<SeperateWallpapersForEachMonitor>();
 
-	if (elapsed > chronoInterval) {
-		SetRandomWallpaper();
-		mLastChange = now;
+	if (separate) {
+		for (u32 i = 0; i < mMonitorStates.size(); ++i) {
+			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - mMonitorStates[i].lastChange).count();
+			if (elapsed >= interval) {
+				SetRandomWallpaper(i);
+			}
+		}
+	} else {
+		auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - mMonitorStates[0].lastChange).count();
+		if (elapsed >= interval) {
+			SetRandomWallpaperForAllMonitors();
+		}
 	}
 }
 
@@ -161,9 +158,9 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		fs::is_directory(wallpaperPath) ||
 		!Util::IsImageFile(wallpaperPath)) {
 		log->info("Kein Legitimes Wallpaper. {} {}", __FUNCTION__, wallpaperPath.string());
+		SetWallpaper(fs::path(fs::path("./CurrentWallpapers") / "1.bmp"), monitorNr);
 		return;
 	}
-
 	FIBITMAP *bitmap = nullptr;
 	FIBITMAP *tempBitmap = nullptr;
 
@@ -173,6 +170,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 
 	mWallpaperBlacklist.emplace(wallpaperPath);
 	fs::path outputDir = "./CurrentWallpapers";
+	outputDir = fs::absolute(outputDir);
 
 	if (!fs::exists(outputDir)) {
 		fs::create_directory(outputDir);
@@ -208,18 +206,24 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		}
 	}
 
+	i32 thumbW = 400;
+	i32 thumbH = thumbW * FreeImage_GetHeight(bitmap) / FreeImage_GetWidth(bitmap);
+
+	auto thumbBitmap = FreeImage_Rescale(bitmap, thumbW, thumbH);
+
 	if (Setting<GUIRenderFilenameInBackground>()) {
 		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
 	}
 
-	fs::path temp = outputDir / (std::to_string(monitorNr + 1) + ".bmp");
-	FreeImage_Save(FIF_BMP, bitmap, temp.string().c_str());
-	FreeImage_Unload(bitmap);
+	fs::path filename = outputDir / (std::to_string(monitorNr + 1) + ".bmp");
+	fs::path thumbFilename = outputDir / (std::to_string(monitorNr + 1) + "_thumb.bmp");
+	FreeImage_Save(FIF_BMP, bitmap, filename.string().c_str());
+	FreeImage_Save(FIF_BMP, thumbBitmap, thumbFilename.string().c_str());
 
-	if (Platform::ChangeWallpaper(temp, monitorNr)) {
-		mCurrentWallpaper = wallpaperPath;
-		mLastChange = now;
-	}
+	FreeImage_Unload(bitmap);
+	FreeImage_Unload(thumbBitmap);
+
+	Platform::ChangeWallpaper(filename, monitorNr);
 }
 
 auto App::GetRandomWallpaper() -> fs::path {
@@ -257,51 +261,54 @@ auto App::GetRandomWallpaper() -> fs::path {
 	return "";
 }
 
-auto App::GetRandomWallpaperAsync() -> void {
-	if (mWallpaperLoading) {
-		return;
-	}
-
-	mWallpaperLoading = true;
-	mWallpaperFuture = mThreadPool.submit([this]() -> fs::path {
-		try {
-			return GetRandomWallpaper();
-		} catch (const std::exception &e) {
-			log->error("Fehler in {}: {}", __FUNCTION__, e.what());
-			return "";
-		}
-	});
-}
-
-auto App::SetRandomWallpaper() -> void {
+auto App::SetRandomWallpaperForAllMonitors() -> void {
 	auto monCount = Platform::GetMonitorCount();
 	if (Setting<SeperateWallpapersForEachMonitor>() && monCount > 1) {
 		for (u32 i = 0; i < monCount; i++) {
-			SetWallpaper(GetRandomWallpaper(), i);
+			SetRandomWallpaper(i);
 		}
 	} else {
-		SetWallpaper(GetRandomWallpaper());
+		SetWallpaperForAllMonitors(GetRandomWallpaper());
 	}
 }
 
-auto App::SetRandomWallpaperAsync() -> void {
-	if (mWallpaperLoading) {
-		return;
-	}
-	mWallpaperLoading = true;
-	mWallpaperFuture = mThreadPool.submit([this]() -> fs::path {
-		try {
-			auto result = GetRandomWallpaper();
-			return result;
-		} catch (const std::exception &e) {
-			log->error("Fehler in {}: {}", __FUNCTION__, e.what());
-			return "";
+auto App::SetRandomWallpaper(u32 monitorID) -> void {
+	if (monitorID >= mMonitorStates.size()) return;
+	SetWallpaper(GetRandomWallpaper(), monitorID);
+}
+
+auto App::SetWallpaperForAllMonitors(const fs::path &wallpaperPath) -> void {
+	for (size_t i = 1; i < mMonitorStates.size(); ++i) {
+		if (mMonitorStates[i].currentWallpaper != wallpaperPath) {
+			mMonitorStates[i].currentWallpaper = wallpaperPath;
+			mMonitorStates[i].needsTextureUpdate = true;
+
+			Platform::ChangeWallpaper(wallpaperPath, i);
 		}
-	});
+	}
 }
 
 auto App::Init(GUI *gui) -> void {
 	mRunning = true;
 	mGen = std::mt19937(std::random_device{}());
 	mGui = gui;
+
+	u32 monitorCount = Platform::GetMonitorCount();
+	if (mMonitorStates.empty()) {
+		mMonitorStates.resize(monitorCount);
+
+		for (u32 i = 0; i < monitorCount; ++i) {
+			// Initialen Zustand setzen
+			mMonitorStates[i].currentWallpaper = GetRandomWallpaper();
+			mMonitorStates[i].lastChange = std::chrono::steady_clock::now();
+			mMonitorStates[i].needsTextureUpdate = true;
+
+			if (!mMonitorStates[i].currentWallpaper.empty()) {
+				Platform::ChangeWallpaper(mMonitorStates[i].currentWallpaper, i);
+			}
+		}
+		log->info("{} Monitore für den ersten Start initialisiert.", monitorCount);
+	} else if (mMonitorStates.size() != monitorCount) {
+		mMonitorStates.resize(monitorCount);
+	}
 }

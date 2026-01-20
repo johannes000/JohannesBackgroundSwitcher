@@ -25,8 +25,9 @@ auto main(int, char **) -> i32 {
 		auto gui = std::make_unique<GUI>();
 
 		app->Init(gui.get());
-		if (std::ifstream is("data.knaub", std::ios::binary); is.good()) {
-			cereal::BinaryInputArchive archive(is);
+		std::ifstream is("data.json");
+		if (is.good()) {
+			cereal::JSONInputArchive archive(is);
 			archive(*app);
 		}
 
@@ -35,7 +36,7 @@ auto main(int, char **) -> i32 {
 		while (isRunning) {
 			// Windows muss die Hotkeys zuerst checken sonst frisst SDL die Events.
 			if (Platform::CheckForWallpaperChangeHotkey() == Platform::HotkeyReaction::NEXT_WALLPAPER) {
-				app->SetRandomWallpaper();
+				app->SetRandomWallpaperForAllMonitors();
 			}
 
 			SDL_Event event;
@@ -76,8 +77,8 @@ auto main(int, char **) -> i32 {
 
 		{
 			// Settings serialisieren
-			std::ofstream os("data.knaub", std::ios::binary);
-			cereal::BinaryOutputArchive archive(os);
+			std::ofstream os("data.json");
+			cereal::JSONOutputArchive archive(os);
 			archive(*app);
 		}
 

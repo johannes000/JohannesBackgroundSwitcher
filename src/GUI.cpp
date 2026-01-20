@@ -167,9 +167,6 @@ auto GUI::RenderMainWindow() -> void {
 	*/
 	// auto a = Platform::GetMonitorCount();
 
-	f32 windowWidth = ImGui::GetContentRegionAvail().x;
-	f32 windowHeight = ImGui::GetContentRegionAvail().y;
-
 	ImGui::Begin("##FolderContent",
 				 nullptr,
 				 ImGuiWindowFlags_HorizontalScrollbar |
@@ -189,10 +186,13 @@ auto GUI::RenderMainWindow() -> void {
 		f32 buttonRegionWidth = ImGui::GetContentRegionAvail().x;
 		f32 buttonRegionButtonWidth = buttonRegionWidth - ImGui::GetStyle().WindowPadding.x;
 		ImGui::BeginDisabled(mIsFileDialogOpen);
-		if (ImGui::Button("+", ImVec2(buttonRegionButtonWidth, 0)) && !mIsFileDialogOpen) {
+		if (ImGui::Button("+", ImVec2(buttonRegionWidth, 0)) && !mIsFileDialogOpen) {
 			// TODO: In App verlagern und den threadpool benutzen
 			mIsFileDialogOpen = true;
 			mFoldersFuture = std::async(std::launch::async, []() {
+				if (NFD::Init() != NFD_OKAY) {
+					return std::vector<fs::path>{};
+				}
 				NFD::UniquePathSet outPaths;
 				nfdresult_t result = NFD::PickFolderMultiple(outPaths, "C:\\Wallpaper");
 				if (result == NFD_OKAY) {
@@ -226,7 +226,7 @@ auto GUI::RenderMainWindow() -> void {
 			mIsFileDialogOpen = false;
 		}
 		if (ImGui::Button("Manual", ImVec2(buttonRegionButtonWidth * 2 / 3, 0))) {
-			mApp->SetRandomWallpaper();
+			mApp->SetRandomWallpaperForAllMonitors();
 		}
 
 		ImGui::SameLine();
@@ -239,6 +239,7 @@ auto GUI::RenderMainWindow() -> void {
 			}
 		}
 		f32 dropdownWidth = buttonRegionButtonWidth * 1 / 3 - ImGui::GetStyle().WindowPadding.x;
+		ImGui::SetNextItemWidth(dropdownWidth);
 
 		if (ImGui::BeginCombo("##SelectInterval", intervalStrings[currentIntervalID], ImGuiComboFlags_NoArrowButton)) {
 			for (size_t i = 0; i < intervals.size(); i++) {
@@ -258,58 +259,62 @@ auto GUI::RenderMainWindow() -> void {
 
 	ImGui::Begin("Current Wallpapers", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDecoration);
 	{
-		static fs::path currentWallpaper, lastWallpaper;
-		currentWallpaper = mApp->GetCurrentWallpaperPath();
+		// RenderWallpaperInfo(1);
 
-		if (currentWallpaper != lastWallpaper) {
-			UpdateWallpaperTexture();
-			lastWallpaper = currentWallpaper;
-		}
-		if (mCurrentWallpaper.texture != 0) {
-			// Current Wallpaper Filename Text
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-			if (ImGui::Button(currentWallpaper.filename().string().c_str())) {
-				Platform::OpenPathInDefaultApp(currentWallpaper.parent_path().string());
-			}
-			ImGui::PopStyleColor(2);
-			ImGui::PopStyleVar();
-			ImGui::SameLine();
-
-			// Remaining Time Text
-			auto remainingTime = mApp->GetRemainingWallpaperIntervalTimeInS();
-			if (remainingTime > 60 * 60)
-				ImGui::Text("%dh:%dm:%ds", remainingTime / 60 / 60, (remainingTime / 60) % 60, remainingTime % 60);
-			if (remainingTime > 60)
-				ImGui::Text("%dm:%ds", remainingTime / 60, remainingTime % 60);
-			else
-				ImGui::Text("%ds", remainingTime);
-
-			// Current Wallpaper Preview
-			ImVec2 availSize = ImGui::GetContentRegionAvail();
-			f32 ratio = (f32)mCurrentWallpaper.width / (f32)mCurrentWallpaper.height;
-			f32 displayHeight = availSize.y;
-			f32 displayWidth = displayHeight * ratio;
-			if (displayWidth > availSize.x) {
-				displayWidth = availSize.x;
-				displayHeight = displayWidth / ratio;
-			}
-			if (ImGui::ImageButton(
-					"##WallpaperBtn",
-					(ImTextureID)(intptr_t)mCurrentWallpaper.texture,
-					ImVec2(displayWidth, displayHeight),
-					ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0),
-					ImVec4(1, 1, 1, 1))) {
-				if (!currentWallpaper.empty() && fs::exists(currentWallpaper.parent_path())) {
-					Platform::OpenPathInDefaultApp(currentWallpaper.string());
-				}
-			}
-		} else {
-			ImGui::Text("Kein Wallpaper");
-		}
+		// for (size_t i = 0; i < mCurrentMonitorCount; i++) {
+		// 	RenderWallpaperInfo(i);
+		// }
 	}
 	ImGui::End();
+}
+
+auto GUI::RenderWallpaperInfo(u32 monitorID) -> void {
+	if (monitorID > mApp->GetMonitorStates().size()) return;
+	auto wallpaperTexture = mWallpaperTextureData.at(monitorID);
+	auto wallpaperPath = mApp->GetMonitorStates()[monitorID].currentWallpaper;
+	if (wallpaperTexture.texture != 0) {
+		// Current Wallpaper Filename Text
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+		if (ImGui::Button(wallpaperPath.filename().string().c_str())) {
+			Platform::OpenPathInDefaultApp(wallpaperPath.parent_path().string());
+		}
+		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar();
+		ImGui::SameLine();
+
+		// Remaining Time Text
+		auto remainingTime = mApp->GetRemainingWallpaperIntervalTimeInS();
+		if (remainingTime > 60 * 60)
+			ImGui::Text("%dh:%dm:%ds", remainingTime / 60 / 60, (remainingTime / 60) % 60, remainingTime % 60);
+		if (remainingTime > 60)
+			ImGui::Text("%dm:%ds", remainingTime / 60, remainingTime % 60);
+		else
+			ImGui::Text("%ds", remainingTime);
+
+		// Current Wallpaper Preview
+		ImVec2 availSize = ImGui::GetContentRegionAvail();
+		f32 ratio = (f32)wallpaperTexture.width / (f32)wallpaperTexture.height;
+		f32 displayHeight = availSize.y;
+		f32 displayWidth = displayHeight * ratio;
+		if (displayWidth > availSize.x) {
+			displayWidth = availSize.x;
+			displayHeight = displayWidth / ratio;
+		}
+		if (ImGui::ImageButton(
+				"##WallpaperBtn",
+				(ImTextureID)(intptr_t)wallpaperTexture.texture,
+				ImVec2(displayWidth, displayHeight),
+				ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0),
+				ImVec4(1, 1, 1, 1))) {
+			if (!wallpaperPath.empty() && fs::exists(wallpaperPath.parent_path())) {
+				Platform::OpenPathInDefaultApp(wallpaperPath.string());
+			}
+		}
+	} else {
+		ImGui::Text("Kein Wallpaper");
+	}
 }
 
 auto GUI::InitRenderer() -> void {
@@ -526,32 +531,43 @@ auto GUI::RenderDemoWindows() -> void {
 	}
 }
 
-auto GUI::UpdateWallpaperTexture() -> void {
-	if (mCurrentWallpaper.texture != 0) {
-		glDeleteTextures(1, &mCurrentWallpaper.texture);
-		mCurrentWallpaper.texture = 0;
+auto GUI::UpdateThumbnailTextures() -> void {
+	auto monitorCount = Platform::GetMonitorCount();
+	if (mWallpaperTextureData.size() != monitorCount) {
+		for (auto const &textureData : mWallpaperTextureData) {
+			if (textureData.texture != 0) {
+				glDeleteTextures(1, &textureData.texture);
+			}
+		}
+		mWallpaperTextureData.resize(monitorCount);
 	}
-	LoadFreeImageAsTexture(mApp->GetCurrentWallpaperPath());
+
+	for (size_t i = 0; i < mWallpaperTextureData.size(); i++) {
+		if (mWallpaperTextureData.at(i).texture != 0) {
+			glDeleteTextures(1, &mWallpaperTextureData.at(i).texture);
+		}
+		LoadFreeImageAsTexture(mApp->GetMonitorStates().at(i).currentWallpaper);
+	}
 }
 
-auto GUI::LoadFreeImageAsTexture(const fs::path &wallpaperPath) -> GLuint {
-	FIBITMAP *bitmap = Util::LoadImage(wallpaperPath);
+auto GUI::LoadFreeImageAsTexture(const fs::path &imagePath) -> GLuint {
+	FIBITMAP *bitmap = Util::LoadImage(imagePath);
 	FIBITMAP *converted = FreeImage_ConvertTo32Bits(bitmap);
 	FreeImage_Unload(bitmap);
 
 	if (!converted) {
-		log->error("Fehler beim konvertieren von {}", wallpaperPath.string());
+		log->error("Fehler beim konvertieren von {}", imagePath.string());
 		return 0;
 	}
 
 	FreeImage_FlipVertical(converted);
-
+	auto mCurrentWallpaper = mWallpaperTextureData.at(1);
 	u8 *bits = FreeImage_GetBits(converted);
 	mCurrentWallpaper.width = FreeImage_GetWidth(converted);
 	mCurrentWallpaper.height = FreeImage_GetHeight(converted);
 
 	if (!bits || mCurrentWallpaper.width == 0 || mCurrentWallpaper.height == 0) {
-		log->error("Ungültige Bilddaten: {}", wallpaperPath.string());
+		log->error("Ungültige Bilddaten: {}", imagePath.string());
 		FreeImage_Unload(converted);
 		return 0;
 	}
@@ -577,7 +593,7 @@ auto GUI::LoadFreeImageAsTexture(const fs::path &wallpaperPath) -> GLuint {
 		return 0;
 	}
 	mCurrentWallpaper.texture = textureID;
-	return textureID;
+	return 0;
 }
 
 auto GUI::InitImguiStyle() -> void {

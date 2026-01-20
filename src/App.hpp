@@ -26,6 +26,19 @@ void serialize(Archive &archive, fs::path &path) {
 }
 } // namespace cereal
 
+struct MonitorState {
+	fs::path currentWallpaper;
+	std::chrono::steady_clock::time_point lastChange;
+	bool needsTextureUpdate{false};
+
+	template <class Archive>
+	void serialize(Archive &archive) {
+		archive(
+			currentWallpaper,
+			lastChange);
+	}
+};
+
 struct WallpaperFolder {
 	fs::path path;
 	bool selected{true};
@@ -64,13 +77,14 @@ public:
 	auto GetWallpaperFolders() -> auto & { return mWallpaperFolders; };
 
 	auto GetPathCount() const -> const auto & { return mPathUseCount; };
-	auto GetCurrentWallpaperPath() const -> const fs::path & { return mCurrentWallpaper; };
 
-	auto SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr = 0) -> void;
 	auto GetRandomWallpaper() -> fs::path;
-	auto GetRandomWallpaperAsync() -> void;
-	auto SetRandomWallpaper() -> void;
-	auto SetRandomWallpaperAsync() -> void;
+	auto SetRandomWallpaper(u32 monitorID) -> void;
+	auto SetRandomWallpaperForAllMonitors() -> void;
+	auto SetWallpaper(const fs::path &wallpaperPath, u32 monitorID = 0) -> void;
+	auto SetWallpaperForAllMonitors(const fs::path &wallpaperPath) -> void;
+
+	auto GetMonitorStates() -> std::vector<MonitorState> & { return mMonitorStates; }
 
 	auto GetRemainingWallpaperIntervalTimeInS() const -> i32;
 
@@ -82,8 +96,7 @@ public:
 			mPathUseCount,
 			// mWallpaperBlacklist,
 			mFolderBlacklist,
-			mCurrentWallpaper,
-			mLastChange);
+			mMonitorStates);
 	}
 
 private:
@@ -106,14 +119,8 @@ private:
 	std::unordered_set<fs::path> mWallpaperBlacklist;
 	std::unordered_set<fs::path> mFolderBlacklist;
 
-	fs::path mCurrentWallpaper;
-
 	LogPtr log = GetLogger("APP");
 	bool mRunning{true};
 
-	std::chrono::steady_clock::time_point mLastChange;
-
-	BS::thread_pool mThreadPool;
-	std::future<fs::path> mWallpaperFuture;
-	std::atomic<bool> mWallpaperLoading{false};
+	std::vector<MonitorState> mMonitorStates;
 };

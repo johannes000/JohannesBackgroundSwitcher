@@ -2,6 +2,7 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+// Order ist wichtig -> shojidl immer nach wundows.h
 #include <windows.h>
 
 #include <shellapi.h>
@@ -111,8 +112,8 @@ auto ChangeWallpaper(const std::filesystem::path &wallpaperPath, u32 monitorNr) 
 }
 
 auto GetMonitorCount() -> u32 {
-	UINT monitorCount = 1;
-	UINT realCount = 0;
+	u32 monitorCount = 1;
+	u32 realCount = 0;
 	if (desktopWallpaper) {
 		auto hr = desktopWallpaper->GetMonitorDevicePathCount(&monitorCount);
 		for (u32 i = 0; i < monitorCount; i++) {

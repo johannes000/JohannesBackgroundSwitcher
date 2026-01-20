@@ -26,6 +26,7 @@
 	SETTING(f32, TTFFontSize, 20.f)                                                 \
                                                                                     \
 	SETTING(i32, SettingAutoSaveIntervalInSec, 100)
+// SETTING(std::string, OutputFolder, "./CurrentWallpapers")
 
 enum class Setting {
 #define SETTING(type, name, default) name,

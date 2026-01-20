@@ -4,6 +4,7 @@
 #include "utility\Includes.hpp"
 
 #include <future>
+#include <span>
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -54,17 +55,18 @@ private:
 
 	auto RenderDemoWindows() -> void;
 	auto RenderMainWindow() -> void;
+	auto RenderWallpaperInfo(u32 monitorID) -> void;
 
 	auto InitImguiStyle() -> void;
 
-	auto UpdateWallpaperTexture() -> void;
+	auto UpdateThumbnailTextures() -> void;
 	auto LoadFreeImageAsTexture(const fs::path &wallpaperPath) -> GLuint;
 
 private:
 	SDL_Window *mWindow;
 	SDL_GLContext mGLContext;
 	ImGuiIO mImGuiIO;
-	TextureData mCurrentWallpaper;
+	std::vector<TextureData> mWallpaperTextureData;
 
 	TTF_Font *mFont;
 	TTF_Font *mFontOutline;

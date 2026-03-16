@@ -24,13 +24,12 @@ auto main(int, char **) -> i32 {
 		auto app = std::make_unique<App>();
 		auto gui = std::make_unique<GUI>();
 
-		app->Init(gui.get());
 		std::ifstream is("data.json");
 		if (is.good()) {
 			cereal::JSONInputArchive archive(is);
 			archive(*app);
 		}
-
+		app->Init(gui.get());
 		gui->Init(app.get());
 
 		while (isRunning) {

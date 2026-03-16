@@ -158,9 +158,14 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		fs::is_directory(wallpaperPath) ||
 		!Util::IsImageFile(wallpaperPath)) {
 		log->info("Kein Legitimes Wallpaper. {} {}", __FUNCTION__, wallpaperPath.string());
-		SetWallpaper(fs::path(fs::path("./CurrentWallpapers") / "1.bmp"), monitorNr);
 		return;
 	}
+
+	if (monitorNr >= mMonitorStates.size()) return;
+	mMonitorStates[monitorNr].currentWallpaper = wallpaperPath;
+	mMonitorStates[monitorNr].lastChange = std::chrono::steady_clock::now();
+	mMonitorStates[monitorNr].needsTextureUpdate = true;
+
 	FIBITMAP *bitmap = nullptr;
 	FIBITMAP *tempBitmap = nullptr;
 
@@ -192,12 +197,6 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		return;
 	}
 
-	// if (FreeImage_GetWidth(bitmap) != 1920) {
-	// 	FIBITMAP *rescaledBitmap = FreeImage_Rescale(bitmap, 1920, 1080);
-	// 	FreeImage_Unload(bitmap);
-	// 	bitmap = rescaledBitmap;
-	// }
-
 	if (!bitmap) {
 		bitmap = Util::LoadImage(outputDir / "default.bmp");
 		if (!bitmap) {
@@ -206,22 +205,14 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		}
 	}
 
-	i32 thumbW = 400;
-	i32 thumbH = thumbW * FreeImage_GetHeight(bitmap) / FreeImage_GetWidth(bitmap);
-
-	auto thumbBitmap = FreeImage_Rescale(bitmap, thumbW, thumbH);
-
 	if (Setting<GUIRenderFilenameInBackground>()) {
 		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
 	}
 
 	fs::path filename = outputDir / (std::to_string(monitorNr + 1) + ".bmp");
-	fs::path thumbFilename = outputDir / (std::to_string(monitorNr + 1) + "_thumb.bmp");
 	FreeImage_Save(FIF_BMP, bitmap, filename.string().c_str());
-	FreeImage_Save(FIF_BMP, thumbBitmap, thumbFilename.string().c_str());
 
 	FreeImage_Unload(bitmap);
-	FreeImage_Unload(thumbBitmap);
 
 	Platform::ChangeWallpaper(filename, monitorNr);
 }
@@ -273,17 +264,13 @@ auto App::SetRandomWallpaperForAllMonitors() -> void {
 }
 
 auto App::SetRandomWallpaper(u32 monitorID) -> void {
-	if (monitorID >= mMonitorStates.size()) return;
 	SetWallpaper(GetRandomWallpaper(), monitorID);
 }
 
 auto App::SetWallpaperForAllMonitors(const fs::path &wallpaperPath) -> void {
-	for (size_t i = 1; i < mMonitorStates.size(); ++i) {
+	for (size_t i = 0; i < mMonitorStates.size(); ++i) {
 		if (mMonitorStates[i].currentWallpaper != wallpaperPath) {
-			mMonitorStates[i].currentWallpaper = wallpaperPath;
-			mMonitorStates[i].needsTextureUpdate = true;
-
-			Platform::ChangeWallpaper(wallpaperPath, i);
+			SetWallpaper(wallpaperPath, i);
 		}
 	}
 }

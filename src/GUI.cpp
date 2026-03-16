@@ -259,7 +259,7 @@ auto GUI::RenderMainWindow() -> void {
 
 	ImGui::Begin("Current Wallpapers", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDecoration);
 	{
-		// RenderWallpaperInfo(1);
+		RenderWallpaperInfo(0);
 
 		// for (size_t i = 0; i < mCurrentMonitorCount; i++) {
 		// 	RenderWallpaperInfo(i);
@@ -269,10 +269,12 @@ auto GUI::RenderMainWindow() -> void {
 }
 
 auto GUI::RenderWallpaperInfo(u32 monitorID) -> void {
-	if (monitorID > mApp->GetMonitorStates().size()) return;
-	auto wallpaperTexture = mWallpaperTextureData.at(monitorID);
-	auto wallpaperPath = mApp->GetMonitorStates()[monitorID].currentWallpaper;
-	if (wallpaperTexture.texture != 0) {
+	auto monitorStates = mApp->GetMonitorStates();
+	if (monitorID > monitorStates.size()) return;
+	// auto wallpaperTexture = mWallpaperTextureData.at(monitorID);
+	auto wallpaperPath = monitorStates[monitorID].currentWallpaper;
+
+	if (!wallpaperPath.empty()) {
 		// Current Wallpaper Filename Text
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
@@ -294,24 +296,24 @@ auto GUI::RenderWallpaperInfo(u32 monitorID) -> void {
 			ImGui::Text("%ds", remainingTime);
 
 		// Current Wallpaper Preview
-		ImVec2 availSize = ImGui::GetContentRegionAvail();
-		f32 ratio = (f32)wallpaperTexture.width / (f32)wallpaperTexture.height;
-		f32 displayHeight = availSize.y;
-		f32 displayWidth = displayHeight * ratio;
-		if (displayWidth > availSize.x) {
-			displayWidth = availSize.x;
-			displayHeight = displayWidth / ratio;
-		}
-		if (ImGui::ImageButton(
-				"##WallpaperBtn",
-				(ImTextureID)(intptr_t)wallpaperTexture.texture,
-				ImVec2(displayWidth, displayHeight),
-				ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0),
-				ImVec4(1, 1, 1, 1))) {
-			if (!wallpaperPath.empty() && fs::exists(wallpaperPath.parent_path())) {
-				Platform::OpenPathInDefaultApp(wallpaperPath.string());
-			}
-		}
+		// ImVec2 availSize = ImGui::GetContentRegionAvail();
+		// f32 ratio = (f32)wallpaperTexture.width / (f32)wallpaperTexture.height;
+		// f32 displayHeight = availSize.y;
+		// f32 displayWidth = displayHeight * ratio;
+		// if (displayWidth > availSize.x) {
+		// 	displayWidth = availSize.x;
+		// 	displayHeight = displayWidth / ratio;
+		// }
+		// if (ImGui::ImageButton(
+		// 		"##WallpaperBtn",
+		// 		(ImTextureID)(intptr_t)wallpaperTexture.texture,
+		// 		ImVec2(displayWidth, displayHeight),
+		// 		ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0),
+		// 		ImVec4(1, 1, 1, 1))) {
+		// 	if (!wallpaperPath.empty() && fs::exists(wallpaperPath.parent_path())) {
+		// 		Platform::OpenPathInDefaultApp(wallpaperPath.string());
+		// 	}
+		// }
 	} else {
 		ImGui::Text("Kein Wallpaper");
 	}

@@ -7,7 +7,7 @@
 #include "Platform.hpp"
 #include "Settings.hpp"
 
-auto main(int, char **) -> i32 {
+auto main(int /* arg */, char ** /* args */) -> i32 {
 	try {
 		bool isRunning = true;
 		auto log = GetLogger("MAIN");
@@ -41,10 +41,12 @@ auto main(int, char **) -> i32 {
 			SDL_Event event;
 			while (SDL_PollEvent(&event)) {
 				ImGui_ImplSDL3_ProcessEvent(&event);
-				if (event.type == SDL_EVENT_QUIT)
+				if (event.type == SDL_EVENT_QUIT) {
 					isRunning = false;
-				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(gui->GetWindow()))
+				}
+				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(gui->GetWindow())) {
 					isRunning = false;
+				}
 			}
 
 			app->HandleEvents();
@@ -59,7 +61,7 @@ auto main(int, char **) -> i32 {
 				lastSlowUpdate = currentTime;
 			}
 			u32 flags = SDL_GetWindowFlags(gui->GetWindow());
-			bool hasFocus = (flags & SDL_WINDOW_INPUT_FOCUS);
+			bool hasFocus = (flags & SDL_WINDOW_INPUT_FOCUS) != 0u;
 			bool isMinimized = (flags & SDL_WINDOW_MINIMIZED);
 
 			if (isMinimized) {

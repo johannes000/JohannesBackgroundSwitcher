@@ -55,12 +55,12 @@ class GUI;
 
 class App {
 public:
-	App() {};
+	App() = default;
 	~App() = default;
 	App(App &&) = delete;
 	App(const App &) = delete;
-	App &operator=(App &&) = delete;
-	App &operator=(const App &) = delete;
+	auto operator=(App &&) -> App & = delete;
+	auto operator=(const App &) -> App & = delete;
 
 	auto Init(GUI *gui) -> void;
 	auto Shutdown() -> void;
@@ -69,14 +69,14 @@ public:
 	auto SlowUpdate() -> void;
 	auto HandleEvents() -> void;
 
-	auto IsRunning() -> bool { return mRunning; }
+	[[nodiscard]] auto IsRunning() const -> bool { return mRunning; }
 
-	auto AddWallpaperFolder(const fs::path path, bool selected = true) -> void;
-	auto RemoveWallpaperFolder(const fs::path path) -> void;
-	auto GetWallpaperFolders() const -> const auto & { return mWallpaperFolders; };
+	auto AddWallpaperFolder(const fs::path &path, bool selected = true) -> void;
+	auto RemoveWallpaperFolder(fs::path path) -> void;
+	[[nodiscard]] auto GetWallpaperFolders() const -> const auto & { return mWallpaperFolders; };
 	auto GetWallpaperFolders() -> auto & { return mWallpaperFolders; };
 
-	auto GetPathCount() const -> const auto & { return mPathUseCount; };
+	[[nodiscard]] auto GetPathCount() const -> const auto & { return mPathUseCount; };
 
 	auto GetRandomWallpaper() -> fs::path;
 	auto SetRandomWallpaper(u32 monitorID) -> void;
@@ -88,7 +88,6 @@ public:
 
 	auto GetRemainingWallpaperIntervalTimeInS() const -> i32;
 
-public:
 	template <class Archive>
 	auto serialize(Archive &archive) -> void {
 		archive(
@@ -105,12 +104,9 @@ private:
 	auto SelectWeightedEntry(const fs::path &path) -> fs::path;
 	auto RecursiveSelectEntry(const fs::path &current) -> fs::path;
 
-	auto GenerateTextBitmap(const std::string text) -> void;
+	static auto FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path &path) -> bool;
 
-	auto FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path path) -> bool;
-
-private:
-	GUI *mGui;
+	GUI *mGui{};
 
 	std::mt19937 mGen;
 

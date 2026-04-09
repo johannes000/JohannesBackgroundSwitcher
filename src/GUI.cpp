@@ -43,41 +43,36 @@ auto GUI::Render() -> void {
 	ImGuiViewport *viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->Pos);
 	ImGui::SetNextWindowSize(viewport->Size);
-	ImGui::SetNextWindowViewport(viewport->ID);
 
 	ImGuiWindowFlags windowFlags =
 		// ImGuiWindowFlags_MenuBar |
-		ImGuiWindowFlags_NoDocking |
 		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoBringToFrontOnFocus |
-		ImGuiWindowFlags_NoNavFocus |
-		ImGuiWindowFlags_NoBackground;
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse |
+		ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.F, 0.F));
 	ImGui::Begin("Main Window", nullptr, windowFlags);
 	ImGui::PopStyleVar();
 
-	ImGuiID dockspaceId = ImGui::GetID("MyDockspace");
-	ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
-
 	RenderMainWindow();
-
 	// RenderDemoWindows();
 
 	ImGui::End();
 	EndFrame();
 }
 
-auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
-	i32 width = FreeImage_GetWidth(bitmap);
-	i32 height = FreeImage_GetHeight(bitmap);
-	i32 freeImagePitch = FreeImage_GetPitch(bitmap);
+auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string &text) -> void {
+	i32 width = (i32)FreeImage_GetWidth(bitmap);
+	i32 height = (i32)FreeImage_GetHeight(bitmap);
+	i32 freeImagePitch = (i32)FreeImage_GetPitch(bitmap);
 	BYTE *pixels = FreeImage_GetBits(bitmap);
 
-	f32 fontSize = ((f32)height / 1080.f) * Setting<Setting::TTFFontSize>();
+	const f32 dummyHeight = 1080;
+	f32 fontSize = ((f32)height / dummyHeight) * Setting<Setting::TTFFontSize>();
 
 	TTF_SetFontSize(mFont, fontSize);
 	TTF_SetFontSize(mFontOutline, fontSize);
@@ -86,7 +81,7 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 	SDL_Color black = {0, 0, 0, 255};
 	SDL_Surface *textSurface = TTF_RenderText_Blended(mFont, text.c_str(), 0, white);
 	SDL_Surface *textOutlineSurface = TTF_RenderText_Blended(mFontOutline, text.c_str(), 0, black);
-	if (!textSurface || !textOutlineSurface) {
+	if ((textSurface == nullptr) || (textOutlineSurface == nullptr)) {
 		log->error("Fehler beim Text-Rendering: {}", SDL_GetError());
 		return;
 	}
@@ -97,7 +92,7 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		width, height,
 		SDL_PIXELFORMAT_BGRA8888,
 		pixels, freeImagePitch);
-	if (!surface) {
+	if (surface == nullptr) {
 		log->error("Fehler beim surface erstellen: {}. Pitch: {}", SDL_GetError(), freeImagePitch);
 		SDL_DestroySurface(textSurface);
 		SDL_DestroySurface(textOutlineSurface);
@@ -132,10 +127,11 @@ auto GUI::RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void {
 		} break;
 	}
 
-	if (Setting<GUIRenderFilenameInBackgroundOutline>())
+	if (Setting<GUIRenderFilenameInBackgroundOutline>()) {
 		SDL_BlitSurface(textOutlineSurface, NULL, surface, &dst);
-	else
+	} else {
 		SDL_BlitSurface(textSurface, NULL, surface, &dst);
+	}
 
 	SDL_DestroySurface(surface);
 	SDL_DestroySurface(textSurface);
@@ -150,33 +146,39 @@ auto RenderFolderPathWithButtons(WallpaperFolder &folder) -> void {
 }
 
 auto GUI::RenderMainWindow() -> void {
-	/*
-		_________________________________________
-		|				|						|
-		|FolderContent	|	Settings			|
-		|				|						|
-		-----------------------------------------
-		|				|						|
-		|				|						|
-		|   Aktuelles	|Aktuelles Wallpaper 2	|
-		|	Wallpaper	|Settings bei einem		|
-		|				|Bildschirm				|
-		|				|						|
-		|				|						|
-		_________________________________________
-	*/
-	// auto a = Platform::GetMonitorCount();
+	auto &folders = mApp->GetWallpaperFolders();
+	auto &monitors = mApp->GetMonitorStates();
 
-	ImGui::Begin("##FolderContent",
-				 nullptr,
-				 ImGuiWindowFlags_HorizontalScrollbar |
-					 ImGuiWindowFlags_NoDecoration);
-	{
-		for (auto &folder : mApp->GetWallpaperFolders()) {
-			RenderFolderPathWithButtons(folder);
+	static i32 sActiveMon = 0;
+
+	const float totalH = ImGui::GetContentRegionAvail().y;
+
+	ImGui::BeginChild("##Content", {0.F, totalH}, 0);
+
+	if (ImGui::BeginTabBar("##monitors")) {
+		for (i32 monID = 0; monID < (i32)monitors.size(); ++monID) {
+			std::string monString = "Mon " + std::to_string(monID + 1);
+			if (ImGui::BeginTabItem(monString.c_str())) {
+				sActiveMon = monID;
+				ImGui::EndTabItem();
+			}
 		}
+		ImGui::EndTabBar();
 	}
-	ImGui::End();
+	if (sActiveMon < (i32)monitors.size()) {
+		RenderWallpaperInfo(sActiveMon);
+	}
+
+	// ImGui::Begin("##FolderContent",
+	// 			 nullptr,
+	// 			 ImGuiWindowFlags_HorizontalScrollbar |
+	// 				 ImGuiWindowFlags_NoDecoration);
+	// {
+	// 	for (auto &folder : folders) {
+	// 		RenderFolderPathWithButtons(folder);
+	// 	}
+	// }
+	// ImGui::End();
 
 	ImGui::Begin("##Buttons",
 				 nullptr,
@@ -207,9 +209,8 @@ auto GUI::RenderMainWindow() -> void {
 						returnVec.push_back(path.get());
 					}
 					return returnVec;
-				} else {
-					return std::vector<fs::path>{};
 				}
+				return std::vector<fs::path>{};
 			});
 		}
 		ImGui::EndDisabled();
@@ -217,11 +218,12 @@ auto GUI::RenderMainWindow() -> void {
 		using namespace std::literals;
 		if (mIsFileDialogOpen && mFoldersFuture.valid() && mFoldersFuture.wait_for(0s) == std::future_status::ready) {
 			auto folders = mFoldersFuture.get();
-			if (folders.empty())
+			if (folders.empty()) {
 				log->warn("NFD hat keine Folder zurückgegeben: ", NFD::GetError());
-			else {
-				for (const auto &path : folders)
+			} else {
+				for (const auto &path : folders) {
 					mApp->AddWallpaperFolder(path);
+				}
 			}
 			mIsFileDialogOpen = false;
 		}
@@ -238,7 +240,7 @@ auto GUI::RenderMainWindow() -> void {
 				break;
 			}
 		}
-		f32 dropdownWidth = buttonRegionButtonWidth * 1 / 3 - ImGui::GetStyle().WindowPadding.x;
+		f32 dropdownWidth = (buttonRegionButtonWidth * 1 / 3) - ImGui::GetStyle().WindowPadding.x;
 		ImGui::SetNextItemWidth(dropdownWidth);
 
 		if (ImGui::BeginCombo("##SelectInterval", intervalStrings[currentIntervalID], ImGuiComboFlags_NoArrowButton)) {
@@ -256,21 +258,14 @@ auto GUI::RenderMainWindow() -> void {
 		}
 	}
 	ImGui::End();
-
-	ImGui::Begin("Current Wallpapers", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoDecoration);
-	{
-		RenderWallpaperInfo(0);
-
-		// for (size_t i = 0; i < mCurrentMonitorCount; i++) {
-		// 	RenderWallpaperInfo(i);
-		// }
-	}
-	ImGui::End();
+	ImGui::EndChild(); // ##Content
 }
 
 auto GUI::RenderWallpaperInfo(u32 monitorID) -> void {
 	auto monitorStates = mApp->GetMonitorStates();
-	if (monitorID > monitorStates.size()) return;
+	if (monitorID > monitorStates.size()) {
+		return;
+	}
 	// auto wallpaperTexture = mWallpaperTextureData.at(monitorID);
 	auto wallpaperPath = monitorStates[monitorID].currentWallpaper;
 
@@ -278,7 +273,7 @@ auto GUI::RenderWallpaperInfo(u32 monitorID) -> void {
 		// Current Wallpaper Filename Text
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0F);
 		if (ImGui::Button(wallpaperPath.filename().string().c_str())) {
 			Platform::OpenPathInDefaultApp(wallpaperPath.parent_path().string());
 		}
@@ -288,12 +283,14 @@ auto GUI::RenderWallpaperInfo(u32 monitorID) -> void {
 
 		// Remaining Time Text
 		auto remainingTime = mApp->GetRemainingWallpaperIntervalTimeInS();
-		if (remainingTime > 60 * 60)
+		if (remainingTime > 60 * 60) {
 			ImGui::Text("%dh:%dm:%ds", remainingTime / 60 / 60, (remainingTime / 60) % 60, remainingTime % 60);
-		if (remainingTime > 60)
+		}
+		if (remainingTime > 60) {
 			ImGui::Text("%dm:%ds", remainingTime / 60, remainingTime % 60);
-		else
+		} else {
 			ImGui::Text("%ds", remainingTime);
+		}
 
 		// Current Wallpaper Preview
 		// ImVec2 availSize = ImGui::GetContentRegionAvail();
@@ -326,8 +323,9 @@ auto GUI::InitRenderer() -> void {
 		throw std::runtime_error(std::string("SDL_Init failed: ") + SDL_GetError());
 	}
 
-	if (!TTF_Init())
+	if (!TTF_Init()) {
 		throw std::runtime_error(std::string("TTF_Init failed "));
+	}
 
 	// Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -399,8 +397,8 @@ auto GUI::InitRenderer() -> void {
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
 	ImGuiStyle &style = ImGui::GetStyle();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-		style.WindowRounding = 0.0f;
-		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+		style.WindowRounding = 0.0F;
+		style.Colors[ImGuiCol_WindowBg].w = 1.0F;
 	}
 
 	// Setup Platform/Renderer backends
@@ -451,7 +449,7 @@ auto GUI::Init(App *app) -> void {
 	f32 FontSize = Setting<TTFFontSize>();
 	mFont = TTF_OpenFont(TTFFontPath.string().c_str(), FontSize);
 	mFontOutline = TTF_OpenFont(TTFFontPath.string().c_str(), FontSize);
-	if (!mFont || !mFontOutline) {
+	if ((mFont == nullptr) || (mFontOutline == nullptr)) {
 		log->error("Fehler beim Font laden.");
 	} else {
 		log->debug("Font: {} erfolgreich geladen.", TTFFontPath.filename().string());
@@ -497,12 +495,13 @@ auto GUI::RenderDemoWindows() -> void {
 	(void)io;
 
 	// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-	if (Setting<GUIShowDemoWindow>())
+	if (Setting<GUIShowDemoWindow>()) {
 		ImGui::ShowDemoWindow(&Setting<GUIShowDemoWindow>());
+	}
 
 	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
 	{
-		static float f = 0.0f;
+		static float f = 0.0F;
 		static int counter = 0;
 
 		ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
@@ -511,15 +510,16 @@ auto GUI::RenderDemoWindows() -> void {
 		ImGui::Checkbox("Demo Window", &Setting<GUIShowDemoWindow>()); // Edit bools storing our window open/close state
 		ImGui::Checkbox("Another Window", &Setting<GUIShowAnotherWindow>());
 
-		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);			 // Edit 1 float using a slider from 0.0f to 1.0f
+		ImGui::SliderFloat("float", &f, 0.0F, 1.0F);			 // Edit 1 float using a slider from 0.0f to 1.0f
 		ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
 
-		if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
+		if (ImGui::Button("Button")) { // Buttons return true when clicked (most widgets return true when edited/activated)
 			counter++;
+		}
 		ImGui::SameLine();
 		ImGui::Text("counter = %d", counter);
 
-		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0F / io.Framerate, io.Framerate);
 		ImGui::End();
 	}
 
@@ -527,8 +527,9 @@ auto GUI::RenderDemoWindows() -> void {
 	if (Setting<GUIShowAnotherWindow>()) {
 		ImGui::Begin("Another Window", &Setting<GUIShowAnotherWindow>()); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 		ImGui::Text("Hello from another window!");
-		if (ImGui::Button("Close Me"))
+		if (ImGui::Button("Close Me")) {
 			Setting<GUIShowAnotherWindow>() = false;
+		}
 		ImGui::End();
 	}
 }
@@ -557,7 +558,7 @@ auto GUI::LoadFreeImageAsTexture(const fs::path &imagePath) -> GLuint {
 	FIBITMAP *converted = FreeImage_ConvertTo32Bits(bitmap);
 	FreeImage_Unload(bitmap);
 
-	if (!converted) {
+	if (converted == nullptr) {
 		log->error("Fehler beim konvertieren von {}", imagePath.string());
 		return 0;
 	}
@@ -565,10 +566,10 @@ auto GUI::LoadFreeImageAsTexture(const fs::path &imagePath) -> GLuint {
 	FreeImage_FlipVertical(converted);
 	auto mCurrentWallpaper = mWallpaperTextureData.at(1);
 	u8 *bits = FreeImage_GetBits(converted);
-	mCurrentWallpaper.width = FreeImage_GetWidth(converted);
-	mCurrentWallpaper.height = FreeImage_GetHeight(converted);
+	mCurrentWallpaper.width = (i32)FreeImage_GetWidth(converted);
+	mCurrentWallpaper.height = (i32)FreeImage_GetHeight(converted);
 
-	if (!bits || mCurrentWallpaper.width == 0 || mCurrentWallpaper.height == 0) {
+	if ((bits == nullptr) || mCurrentWallpaper.width == 0 || mCurrentWallpaper.height == 0) {
 		log->error("Ungültige Bilddaten: {}", imagePath.string());
 		FreeImage_Unload(converted);
 		return 0;
@@ -601,7 +602,7 @@ auto GUI::LoadFreeImageAsTexture(const fs::path &imagePath) -> GLuint {
 auto GUI::InitImguiStyle() -> void {
 	// Everforest style by DestroyerDarkNess from ImThemes
 	ImGuiStyle &style = ImGui::GetStyle();
-
+	// NOLINTBEGIN
 	style.Alpha = 1.0f;
 	style.DisabledAlpha = 0.6000000238418579f;
 	style.WindowPadding = ImVec2(6.0f, 3.0f);
@@ -682,4 +683,5 @@ auto GUI::InitImguiStyle() -> void {
 	style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.699999988079071f);
 	style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.800000011920929f, 0.800000011920929f, 0.800000011920929f, 0.2000000029802322f);
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.800000011920929f, 0.800000011920929f, 0.800000011920929f, 0.3499999940395355f);
+	// NOLINTEND
 }

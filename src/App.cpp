@@ -5,11 +5,10 @@
 #include "Settings.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
+#include <numbers>
 
 namespace {
-i32 maxSelectionCount = 10;
-
-constexpr f64 PI = 3.14159265358979323846;
+constexpr i32 maxSelectionCount = 10;
 
 namespace Settings2 {
 bool RenderFilename = true;
@@ -18,8 +17,10 @@ bool RenderFilename = true;
 
 auto GetWeight(i32 count) -> f64 {
 	f64 norm = static_cast<f64>(count % maxSelectionCount) / maxSelectionCount;
-	f64 cos = std::cos(2.f * PI * norm);
-	return 0.1f + 0.9f * (cos + 1.f) / 2.f;
+	// NOLINTBEGIN
+	f64 cos = std::cos(2.F * std::numbers::pi * norm);
+	return 0.1F + (0.9F * (cos + 1.F) / 2.F);
+	// NOLINTEND
 }
 
 auto App::HandleEvents() -> void {
@@ -34,7 +35,7 @@ auto App::HandleCounts(const fs::path &path) -> void {
 
 auto App::GetRemainingWallpaperIntervalTimeInS() const -> i32 {
 	return Setting<WallpaperIntervalInSeconds>() -
-		   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - mMonitorStates[0].lastChange).count();
+		   static_cast<i32>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - mMonitorStates[0].lastChange).count());
 }
 
 auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
@@ -46,31 +47,35 @@ auto App::SelectWeightedEntry(const fs::path &path) -> fs::path {
 		if (mWallpaperBlacklist.contains(entryPath)) {
 		} else if (Util::IsImageFile(entryPath)) {
 			candidates.push_back(entryPath);
-			weights.push_back(1.f);
+			weights.push_back(1.F);
 		} else if (entry.is_directory()) {
 			i32 count = mPathUseCount[entryPath];
 			candidates.push_back(entryPath);
 			weights.push_back(GetWeight(count));
 		}
 	}
-	if (candidates.empty())
+	if (candidates.empty()) {
 		return {};
-	if (candidates.size() == 1)
+	}
+	if (candidates.size() == 1) {
 		return candidates[0];
+	}
 
 	std::discrete_distribution<> distr(weights.begin(), weights.end());
 	return candidates[distr(mGen)];
 }
 
 auto App::RecursiveSelectEntry(const fs::path &current) -> fs::path {
-	if (!fs::exists(current))
+	if (!fs::exists(current)) {
 		return {};
-	if (Util::IsImageFile(current))
+	}
+	if (Util::IsImageFile(current)) {
 		return current;
-	if (!fs::is_directory(current))
+	}
+	if (!fs::is_directory(current)) {
 		return {};
-	else
-		HandleCounts(current);
+	}
+	HandleCounts(current);
 
 	auto selected = SelectWeightedEntry(current);
 	if (selected.empty()) {
@@ -80,17 +85,8 @@ auto App::RecursiveSelectEntry(const fs::path &current) -> fs::path {
 	return RecursiveSelectEntry(selected);
 }
 
-auto App::GenerateTextBitmap(const std::string /* text */) -> void {
-	// Windows only
-}
-
-auto App::FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path path) -> bool {
-	for (const auto &wp : folder) {
-		if (wp.path == path) {
-			return true;
-		}
-	}
-	return false;
+auto App::FindFolderByPath(const std::vector<WallpaperFolder> &folder, fs::path &path) -> bool {
+	return std::ranges::any_of(folder, [&path](const WallpaperFolder &wallpaper) -> bool { return wallpaper.path == path; });
 }
 
 auto App::Update() -> void {
@@ -100,6 +96,10 @@ auto App::SlowUpdate() -> void {
 	auto now = std::chrono::steady_clock::now();
 	i32 interval = Setting<WallpaperIntervalInSeconds>();
 	bool separate = Setting<SeperateWallpapersForEachMonitor>();
+
+	if (mMonitorStates.size() != Platform::GetMonitorCount()) {
+		// TODO: Sehr Wichtig
+	}
 
 	if (separate) {
 		for (u32 i = 0; i < mMonitorStates.size(); ++i) {
@@ -119,7 +119,7 @@ auto App::SlowUpdate() -> void {
 auto App::Shutdown() -> void {
 }
 
-auto App::AddWallpaperFolder(const fs::path path, bool selected) -> void {
+auto App::AddWallpaperFolder(const fs::path &path, bool selected) -> void {
 	if (!fs::exists(path)) {
 		log->warn("Pfad {} exzestiert nicht. Kann nicht hinzufügen", path.string());
 		return;
@@ -136,11 +136,11 @@ auto App::AddWallpaperFolder(const fs::path path, bool selected) -> void {
 			return;
 		}
 	}
-	WallpaperFolder wf;
-	wf.path = path;
-	wf.selected = selected;
-	mWallpaperFolders.push_back(wf);
-	std::sort(mWallpaperFolders.begin(), mWallpaperFolders.end(), [](WallpaperFolder a, WallpaperFolder b) -> bool { return a.path < b.path; });
+	WallpaperFolder wallpaperFolder;
+	wallpaperFolder.path = path;
+	wallpaperFolder.selected = selected;
+	mWallpaperFolders.push_back(wallpaperFolder);
+	std::sort(mWallpaperFolders.begin(), mWallpaperFolders.end(), [](WallpaperFolder &a, WallpaperFolder &b) -> bool { return a.path < b.path; });
 }
 
 auto App::RemoveWallpaperFolder(const fs::path path) -> void {
@@ -153,7 +153,7 @@ auto App::RemoveWallpaperFolder(const fs::path path) -> void {
 	}
 }
 
-auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
+auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorID) -> void {
 	if (!fs::exists(wallpaperPath) ||
 		fs::is_directory(wallpaperPath) ||
 		!Util::IsImageFile(wallpaperPath)) {
@@ -161,10 +161,12 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		return;
 	}
 
-	if (monitorNr >= mMonitorStates.size()) return;
-	mMonitorStates[monitorNr].currentWallpaper = wallpaperPath;
-	mMonitorStates[monitorNr].lastChange = std::chrono::steady_clock::now();
-	mMonitorStates[monitorNr].needsTextureUpdate = true;
+	if (monitorID >= mMonitorStates.size()) {
+		return;
+	}
+	mMonitorStates[monitorID].currentWallpaper = wallpaperPath;
+	mMonitorStates[monitorID].lastChange = std::chrono::steady_clock::now();
+	mMonitorStates[monitorID].needsTextureUpdate = true;
 
 	FIBITMAP *bitmap = nullptr;
 	FIBITMAP *tempBitmap = nullptr;
@@ -182,7 +184,7 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 	}
 
 	bitmap = Util::LoadImage(wallpaperPath);
-	if (!bitmap) {
+	if (bitmap == nullptr) {
 		log->error("Bild konnte nicht geladen werden");
 		return;
 	}
@@ -192,14 +194,14 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 	bitmap = tempBitmap;
 	tempBitmap = nullptr;
 
-	if (!bitmap) {
+	if (bitmap == nullptr) {
 		log->error("Konvertierung zu 32Bit fehlgeschlagen");
 		return;
 	}
 
-	if (!bitmap) {
+	if (bitmap == nullptr) {
 		bitmap = Util::LoadImage(outputDir / "default.bmp");
-		if (!bitmap) {
+		if (bitmap == nullptr) {
 			log->error("Default-Bild konnte nicht geladen werden");
 			return;
 		}
@@ -209,12 +211,12 @@ auto App::SetWallpaper(const fs::path &wallpaperPath, u32 monitorNr) -> void {
 		mGui->RenderTextInBitmap(bitmap, wallpaperPath.filename().string());
 	}
 
-	fs::path filename = outputDir / (std::to_string(monitorNr + 1) + ".bmp");
+	fs::path filename = outputDir / (std::to_string(monitorID + 1) + ".bmp");
 	FreeImage_Save(FIF_BMP, bitmap, filename.string().c_str());
 
 	FreeImage_Unload(bitmap);
 
-	Platform::ChangeWallpaper(filename, monitorNr);
+	Platform::ChangeWallpaper(filename, monitorID);
 }
 
 auto App::GetRandomWallpaper() -> fs::path {
@@ -225,12 +227,13 @@ auto App::GetRandomWallpaper() -> fs::path {
 
 	// Selected Ordner Sammeln
 	std::vector<fs::path> eligible;
-	for (const auto &wf : mWallpaperFolders) {
-		if (wf.selected) {
-			if (fs::exists(wf.path) && fs::is_directory(wf.path))
-				eligible.push_back(wf.path);
-			else
-				RemoveWallpaperFolder(wf.path);
+	for (const auto &folder : mWallpaperFolders) {
+		if (folder.selected) {
+			if (fs::exists(folder.path) && fs::is_directory(folder.path)) {
+				eligible.push_back(folder.path);
+			} else {
+				RemoveWallpaperFolder(folder.path);
+			}
 		}
 	}
 
@@ -243,11 +246,12 @@ auto App::GetRandomWallpaper() -> fs::path {
 	std::uniform_int_distribution<size_t> firstDist(0, eligible.size() - 1);
 
 	while (true) {
-		fs::path base = eligible[firstDist(mGen)];
+		const fs::path &base = eligible[firstDist(mGen)];
 
 		fs::path result = RecursiveSelectEntry(base);
-		if (!result.empty())
+		if (!result.empty()) {
 			return result;
+		}
 	}
 	return "";
 }
@@ -268,6 +272,7 @@ auto App::SetRandomWallpaper(u32 monitorID) -> void {
 }
 
 auto App::SetWallpaperForAllMonitors(const fs::path &wallpaperPath) -> void {
+	// TODO: Macht das gleiche size mal. Effizienter gestallten.
 	for (size_t i = 0; i < mMonitorStates.size(); ++i) {
 		if (mMonitorStates[i].currentWallpaper != wallpaperPath) {
 			SetWallpaper(wallpaperPath, i);

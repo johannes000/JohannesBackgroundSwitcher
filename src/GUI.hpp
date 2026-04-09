@@ -29,12 +29,12 @@ struct TextureData {
 
 class GUI {
 public:
-	GUI() {};
+	GUI() = default;
 	~GUI() = default;
 	GUI(GUI &&) = delete;
 	GUI(const GUI &) = delete;
-	GUI &operator=(GUI &&) = delete;
-	GUI &operator=(const GUI &) = delete;
+	auto operator=(GUI &&) -> GUI & = delete;
+	auto operator=(const GUI &) -> GUI & = delete;
 
 	auto Init(App *app) -> void;
 	auto Shutdown() -> void;
@@ -43,35 +43,34 @@ public:
 	auto SlowUpdate() -> void;
 	auto Render() -> void;
 
-	auto RenderTextInBitmap(FIBITMAP *bitmap, const std::string text) -> void;
+	auto RenderTextInBitmap(FIBITMAP *bitmap, const std::string &text) -> void;
 
 	auto GetWindow() -> SDL_Window * { return mWindow; }
 	auto GetGLContext() -> SDL_GLContext * { return &mGLContext; }
 
 private:
 	auto InitRenderer() -> void;
-	auto NewFrame() -> void;
+	static auto NewFrame() -> void;
 	auto EndFrame() -> void;
 
-	auto RenderDemoWindows() -> void;
+	static auto RenderDemoWindows() -> void;
 	auto RenderMainWindow() -> void;
 	auto RenderWallpaperInfo(u32 monitorID) -> void;
 
-	auto InitImguiStyle() -> void;
+	static auto InitImguiStyle() -> void;
 
 	auto UpdateThumbnailTextures() -> void;
-	auto LoadFreeImageAsTexture(const fs::path &wallpaperPath) -> GLuint;
+	auto LoadFreeImageAsTexture(const fs::path &imagePath) -> GLuint;
 
-private:
-	SDL_Window *mWindow;
-	SDL_GLContext mGLContext;
+	SDL_Window *mWindow{};
+	SDL_GLContext mGLContext{};
 	ImGuiIO mImGuiIO;
 	std::vector<TextureData> mWallpaperTextureData;
 
-	TTF_Font *mFont;
-	TTF_Font *mFontOutline;
+	TTF_Font *mFont{};
+	TTF_Font *mFontOutline{};
 
-	App *mApp;
+	App *mApp{};
 
 	u32 mCurrentMonitorCount{1};
 

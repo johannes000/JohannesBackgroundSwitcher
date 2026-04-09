@@ -74,5 +74,6 @@ UI:
     ☐ Suche unter/über der Folder Liste. Soll nur die Ordner zeigen die die zeichenkette beinhalten
 
 Bugs:
+    ☐ mMonitorStates in App updaten wenn sich die Monitoranzahl ändert @critical
     ☐ Bug: Wenn alle Bilder bilder Blacklisted sind gibts Probleme
     ✔ Hotkey Funktioniert nicht mehr @done(21-10-25)

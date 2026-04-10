@@ -40,6 +40,7 @@ Funktions:
     ✔ Bildschirmgrößen rausfinden @done(29-10-25)
     ✔ Wegen ImGui auf einfachere Settings umsteigen. @done(28-10-25)
         ✔ periodisch testen ob sich was geändert hat und Lokale .json updaten @done(28-10-25)
+    ☐ auf OnWallpaperChange callbacks umstellen
 
 Wallpapertext:
     ☐ Position in Settings impl.

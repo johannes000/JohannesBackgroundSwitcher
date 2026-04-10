@@ -56,6 +56,7 @@ auto main(int /* arg */, char ** /* args */) -> i32 {
 			u64 currentTime = SDL_GetTicks();
 			if (currentTime - lastSlowUpdate >= 1000) {
 				app->SlowUpdate();
+				gui->SlowUpdate();
 				Settings::AutoSaveIfDirty();
 
 				lastSlowUpdate = currentTime;

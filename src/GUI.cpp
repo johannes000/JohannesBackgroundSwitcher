@@ -4,6 +4,7 @@
 #include "Platform.hpp"
 #include "Settings.hpp"
 #include "nfd.hpp"
+#include <algorithm>
 
 namespace {
 
@@ -34,6 +35,10 @@ auto GUI::Update() -> void {
 }
 
 auto GUI::SlowUpdate() -> void {
+	auto &states = mApp->GetMonitorStates();
+	if (std::ranges::any_of(states, [](const auto &state) -> auto { return state.needsTextureUpdate; })) {
+		UpdateThumbnailTextures();
+	}
 	mCurrentMonitorCount = Platform::GetMonitorCount();
 }
 
@@ -145,16 +150,7 @@ auto RenderFolderPathWithButtons(WallpaperFolder &folder) -> void {
 	// }
 }
 
-auto GUI::RenderMainWindow() -> void {
-	auto &folders = mApp->GetWallpaperFolders();
-	auto &monitors = mApp->GetMonitorStates();
-
-	static i32 sActiveMon = 0;
-
-	const float totalH = ImGui::GetContentRegionAvail().y;
-
-	ImGui::BeginChild("##Content", {0.F, totalH}, 0);
-
+auto GUI::RenderMonitorTabs(std::vector<MonitorState> &monitors, i32 &sActiveMon) -> void {
 	if (ImGui::BeginTabBar("##monitors")) {
 		for (i32 monID = 0; monID < (i32)monitors.size(); ++monID) {
 			std::string monString = "Mon " + std::to_string(monID + 1);
@@ -168,18 +164,49 @@ auto GUI::RenderMainWindow() -> void {
 	if (sActiveMon < (i32)monitors.size()) {
 		RenderWallpaperInfo(sActiveMon);
 	}
+}
 
-	// ImGui::Begin("##FolderContent",
-	// 			 nullptr,
-	// 			 ImGuiWindowFlags_HorizontalScrollbar |
-	// 				 ImGuiWindowFlags_NoDecoration);
-	// {
-	// 	for (auto &folder : folders) {
-	// 		RenderFolderPathWithButtons(folder);
-	// 	}
-	// }
-	// ImGui::End();
+auto GUI::HandleFileDialogResult() -> void {
+	using namespace std::literals;
+	if (mIsFileDialogOpen && mFoldersFuture.valid() && mFoldersFuture.wait_for(0s) == std::future_status::ready) {
+		auto folders = mFoldersFuture.get();
+		if (folders.empty()) {
+			log->warn("NFD hat keine Folder zurückgegeben: ", NFD::GetError());
+		} else {
+			for (const auto &path : folders) {
+				mApp->AddWallpaperFolder(path);
+			}
+		}
+		mIsFileDialogOpen = false;
+	}
+}
 
+auto GUI::RenderIntervalDropdown(f32 dropdownWidth) -> void {
+	static size_t currentIntervalID = 3;
+	for (size_t i = 0; i < intervals.size(); i++) {
+		if (Setting<WallpaperIntervalInSeconds>() == intervals[i]) {
+			currentIntervalID = i;
+			break;
+		}
+	}
+	ImGui::SetNextItemWidth(dropdownWidth);
+
+	if (ImGui::BeginCombo("##SelectInterval", intervalStrings[currentIntervalID], ImGuiComboFlags_NoArrowButton)) {
+		for (size_t i = 0; i < intervals.size(); i++) {
+			bool isSelected = (currentIntervalID == i);
+			if (ImGui::Selectable(intervalStrings[i], isSelected, 0, ImVec2(dropdownWidth, 0))) {
+				Setting<WallpaperIntervalInSeconds>() = intervals[i];
+				log->trace("Interval auf {} gesetzt", intervalStrings[i]);
+			}
+			if (isSelected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+}
+
+auto GUI::RenderButtons() -> void {
 	ImGui::Begin("##Buttons",
 				 nullptr,
 				 ImGuiWindowFlags_HorizontalScrollbar |
@@ -206,7 +233,7 @@ auto GUI::RenderMainWindow() -> void {
 					for (nfdpathsetsize_t i = 0; i < numPaths; ++i) {
 						NFD::UniquePathSetPath path;
 						NFD::PathSet::GetPath(outPaths, i, path);
-						returnVec.push_back(path.get());
+						returnVec.emplace_back(path.get());
 					}
 					return returnVec;
 				}
@@ -215,49 +242,44 @@ auto GUI::RenderMainWindow() -> void {
 		}
 		ImGui::EndDisabled();
 
-		using namespace std::literals;
-		if (mIsFileDialogOpen && mFoldersFuture.valid() && mFoldersFuture.wait_for(0s) == std::future_status::ready) {
-			auto folders = mFoldersFuture.get();
-			if (folders.empty()) {
-				log->warn("NFD hat keine Folder zurückgegeben: ", NFD::GetError());
-			} else {
-				for (const auto &path : folders) {
-					mApp->AddWallpaperFolder(path);
-				}
-			}
-			mIsFileDialogOpen = false;
-		}
+		HandleFileDialogResult();
+
 		if (ImGui::Button("Manual", ImVec2(buttonRegionButtonWidth * 2 / 3, 0))) {
 			mApp->SetRandomWallpaperForAllMonitors();
 		}
 
 		ImGui::SameLine();
 
-		static size_t currentIntervalID = 3;
-		for (size_t i = 0; i < intervals.size(); i++) {
-			if (Setting<WallpaperIntervalInSeconds>() == intervals[i]) {
-				currentIntervalID = i;
-				break;
-			}
-		}
 		f32 dropdownWidth = (buttonRegionButtonWidth * 1 / 3) - ImGui::GetStyle().WindowPadding.x;
-		ImGui::SetNextItemWidth(dropdownWidth);
-
-		if (ImGui::BeginCombo("##SelectInterval", intervalStrings[currentIntervalID], ImGuiComboFlags_NoArrowButton)) {
-			for (size_t i = 0; i < intervals.size(); i++) {
-				bool isSelected = (currentIntervalID == i);
-				if (ImGui::Selectable(intervalStrings[i], isSelected, 0, ImVec2(dropdownWidth, 0))) {
-					Setting<WallpaperIntervalInSeconds>() = intervals[i];
-					log->trace("Interval auf {} gesetzt", intervalStrings[i]);
-				}
-				if (isSelected) {
-					ImGui::SetItemDefaultFocus();
-				}
-			}
-			ImGui::EndCombo();
-		}
+		RenderIntervalDropdown(dropdownWidth);
 	}
 	ImGui::End();
+}
+
+auto GUI::RenderMainWindow() -> void {
+	auto &folders = mApp->GetWallpaperFolders();
+	auto &monitors = mApp->GetMonitorStates();
+
+	static i32 sActiveMon = 0;
+
+	const float totalH = ImGui::GetContentRegionAvail().y;
+
+	ImGui::BeginChild("##Content", {0.F, totalH}, 0);
+
+	// Monitor Tabs
+	RenderMonitorTabs(monitors, sActiveMon);
+	RenderButtons();
+	// ImGui::Begin("##FolderContent",
+	// 			 nullptr,
+	// 			 ImGuiWindowFlags_HorizontalScrollbar |
+	// 				 ImGuiWindowFlags_NoDecoration);
+	// {
+	// 	for (auto &folder : folders) {
+	// 		RenderFolderPathWithButtons(folder);
+	// 	}
+	// }
+	// ImGui::End();
+
 	ImGui::EndChild(); // ##Content
 }
 
@@ -267,52 +289,84 @@ auto GUI::RenderWallpaperInfo(u32 monitorID) -> void {
 		return;
 	}
 	// auto wallpaperTexture = mWallpaperTextureData.at(monitorID);
+	auto &state = monitorStates[monitorID];
 	auto wallpaperPath = monitorStates[monitorID].currentWallpaper;
 
-	if (!wallpaperPath.empty()) {
-		// Current Wallpaper Filename Text
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0F);
-		if (ImGui::Button(wallpaperPath.filename().string().c_str())) {
-			Platform::OpenPathInDefaultApp(wallpaperPath.parent_path().string());
-		}
-		ImGui::PopStyleColor(2);
-		ImGui::PopStyleVar();
-		ImGui::SameLine();
+	if (wallpaperPath.empty()) {
+		// TODO: Mittich setzten.
+		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+		ImGui::TextUnformatted("Kein Wallpaper gesetzt");
+		ImGui::PopStyleColor();
+		return;
+	}
 
-		// Remaining Time Text
-		auto remainingTime = mApp->GetRemainingWallpaperIntervalTimeInS();
-		if (remainingTime > 60 * 60) {
-			ImGui::Text("%dh:%dm:%ds", remainingTime / 60 / 60, (remainingTime / 60) % 60, remainingTime % 60);
-		}
-		if (remainingTime > 60) {
-			ImGui::Text("%dm:%ds", remainingTime / 60, remainingTime % 60);
+	// Current Wallpaper Filename Text
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0F);
+	if (ImGui::Button(wallpaperPath.filename().string().c_str())) {
+		Platform::OpenPathInDefaultApp(wallpaperPath.parent_path().string());
+	}
+	ImGui::PopStyleColor(2);
+	ImGui::PopStyleVar();
+	ImGui::SameLine();
+
+	bool hasTexture = monitorID < mWallpaperTextureData.size() && mWallpaperTextureData[monitorID].texture != 0;
+
+	f32 previewW = ImGui::GetContentRegionAvail().y;
+	f32 previewH = std::round(previewW * 9.f / 16.f);
+	ImVec2 previewSize{previewW, previewH};
+
+	ImVec2 cursorBefore = ImGui::GetCursorScreenPos();
+
+	if (hasTexture) {
+		auto &td = mWallpaperTextureData[monitorID];
+
+		f32 imRatio = td.width > 0 && td.height > 0
+						  ? (f32)td.width / (f32)td.height
+						  : 16.f / 9.f;
+
+		f32 boxRatio = previewW / previewH;
+		f32 drawW;
+		f32 drawH;
+		f32 offX = 0.f;
+		f32 offY = 0.f;
+
+		if (imRatio >= boxRatio) {
+			drawW = previewW;
+			drawH = previewH / imRatio;
+			offY = (previewH - drawH) * 0.5f;
 		} else {
-			ImGui::Text("%ds", remainingTime);
+			drawW = previewH;
+			drawH = previewW / imRatio;
+			offY = (previewH - drawH) * 0.5f;
 		}
 
-		// Current Wallpaper Preview
-		// ImVec2 availSize = ImGui::GetContentRegionAvail();
-		// f32 ratio = (f32)wallpaperTexture.width / (f32)wallpaperTexture.height;
-		// f32 displayHeight = availSize.y;
-		// f32 displayWidth = displayHeight * ratio;
-		// if (displayWidth > availSize.x) {
-		// 	displayWidth = availSize.x;
-		// 	displayHeight = displayWidth / ratio;
-		// }
-		// if (ImGui::ImageButton(
-		// 		"##WallpaperBtn",
-		// 		(ImTextureID)(intptr_t)wallpaperTexture.texture,
-		// 		ImVec2(displayWidth, displayHeight),
-		// 		ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0),
-		// 		ImVec4(1, 1, 1, 1))) {
-		// 	if (!wallpaperPath.empty() && fs::exists(wallpaperPath.parent_path())) {
-		// 		Platform::OpenPathInDefaultApp(wallpaperPath.string());
-		// 	}
-		// }
+		ImGui::GetWindowDrawList()->AddRectFilled(
+			cursorBefore,
+			{cursorBefore.x + previewW, cursorBefore.x + previewH},
+			IM_COL32(0, 0, 0, 255));
+
+		ImGui::SetCursorScreenPos({cursorBefore.x + offX, cursorBefore.y + offY});
+		ImGui::ImageWithBg((ImTextureID)(intptr_t)td.texture, {drawW, drawH});
+
+		// ImGui::SetCursorScreenPos({cursorBefore.x, cursorBefore.y + previewH});
+		// ImGui::Dummy({previewW, 0.f});
 	} else {
-		ImGui::Text("Kein Wallpaper");
+		ImGui::NewLine();
+		ImGui::Text("Keine Textur");
+		ImGui::NewLine();
+	}
+
+	// Remaining Time Text
+	auto remainingTime = mApp->GetRemainingWallpaperIntervalTimeInS();
+	if (remainingTime > 60 * 60) {
+		ImGui::Text("%dh:%dm:%ds", remainingTime / 60 / 60, (remainingTime / 60) % 60, remainingTime % 60);
+	}
+	if (remainingTime > 60) {
+		ImGui::Text("%dm:%ds", remainingTime / 60, remainingTime % 60);
+	} else {
+		ImGui::Text("%ds", remainingTime);
 	}
 }
 
@@ -535,41 +589,64 @@ auto GUI::RenderDemoWindows() -> void {
 }
 
 auto GUI::UpdateThumbnailTextures() -> void {
+	auto &monitors = mApp->GetMonitorStates();
 	auto monitorCount = Platform::GetMonitorCount();
+
 	if (mWallpaperTextureData.size() != monitorCount) {
 		for (auto const &textureData : mWallpaperTextureData) {
 			if (textureData.texture != 0) {
 				glDeleteTextures(1, &textureData.texture);
 			}
 		}
-		mWallpaperTextureData.resize(monitorCount);
+		mWallpaperTextureData.assign(monitorCount, TextureData{});
 	}
 
-	for (size_t i = 0; i < mWallpaperTextureData.size(); i++) {
+	for (size_t i = 0; i < monitorCount; i++) {
+		if (i >= monitors.size()) {
+			continue;
+		}
+
+		if (!monitors[i].needsTextureUpdate) {
+			continue;
+		}
+
 		if (mWallpaperTextureData.at(i).texture != 0) {
 			glDeleteTextures(1, &mWallpaperTextureData.at(i).texture);
+			mWallpaperTextureData[i] = TextureData{};
 		}
-		LoadFreeImageAsTexture(mApp->GetMonitorStates().at(i).currentWallpaper);
+		const auto &path = monitors[i].currentWallpaper;
+		if (path.empty() || !fs::exists(path)) {
+			continue;
+		}
+		GLuint texture = LoadFreeImageAsTexture(path);
+		if (texture != 0) {
+			mWallpaperTextureData[i].texture = texture;
+		}
+		monitors[i].needsTextureUpdate = false;
 	}
 }
 
 auto GUI::LoadFreeImageAsTexture(const fs::path &imagePath) -> GLuint {
 	FIBITMAP *bitmap = Util::LoadImage(imagePath);
+	if (bitmap == nullptr) {
+		log->error("{}: Bitmap ist null für {}", __FUNCTION__, imagePath.string());
+		return 0;
+	}
 	FIBITMAP *converted = FreeImage_ConvertTo32Bits(bitmap);
 	FreeImage_Unload(bitmap);
 
 	if (converted == nullptr) {
-		log->error("Fehler beim konvertieren von {}", imagePath.string());
+		log->error("Fehler bei ConvertTo32Bits von {}", imagePath.string());
 		return 0;
 	}
 
 	FreeImage_FlipVertical(converted);
-	auto mCurrentWallpaper = mWallpaperTextureData.at(1);
-	u8 *bits = FreeImage_GetBits(converted);
-	mCurrentWallpaper.width = (i32)FreeImage_GetWidth(converted);
-	mCurrentWallpaper.height = (i32)FreeImage_GetHeight(converted);
 
-	if ((bits == nullptr) || mCurrentWallpaper.width == 0 || mCurrentWallpaper.height == 0) {
+	u8 *bits = FreeImage_GetBits(converted);
+	i32 width = (i32)FreeImage_GetWidth(converted);
+	i32 height = (i32)FreeImage_GetHeight(converted);
+
+	if ((bits == nullptr) || width == 0 || height == 0) {
 		log->error("Ungültige Bilddaten: {}", imagePath.string());
 		FreeImage_Unload(converted);
 		return 0;
@@ -584,7 +661,7 @@ auto GUI::LoadFreeImageAsTexture(const fs::path &imagePath) -> GLuint {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mCurrentWallpaper.width, mCurrentWallpaper.height,
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height,
 				 0, GL_BGRA, GL_UNSIGNED_BYTE, bits);
 
 	FreeImage_Unload(converted);
@@ -595,8 +672,7 @@ auto GUI::LoadFreeImageAsTexture(const fs::path &imagePath) -> GLuint {
 		glDeleteTextures(1, &textureID);
 		return 0;
 	}
-	mCurrentWallpaper.texture = textureID;
-	return 0;
+	return textureID;
 }
 
 auto GUI::InitImguiStyle() -> void {

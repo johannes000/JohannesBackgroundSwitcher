@@ -19,6 +19,7 @@
 #include <SDL3/SDL_opengl.h>
 #endif
 
+struct MonitorState;
 class App;
 
 struct TextureData {
@@ -54,8 +55,14 @@ private:
 	auto EndFrame() -> void;
 
 	static auto RenderDemoWindows() -> void;
+	void extracted(std::vector<MonitorState> &monitors, i32 &sActiveMon);
 	auto RenderMainWindow() -> void;
+	auto RenderMonitorTabs(std::vector<MonitorState> &monitors, i32 &sActiveMon) -> void;
+	auto RenderButtons() -> void;
 	auto RenderWallpaperInfo(u32 monitorID) -> void;
+	auto RenderIntervalDropdown(f32 dropdownWidth) -> void;
+
+	auto HandleFileDialogResult() -> void;
 
 	static auto InitImguiStyle() -> void;
 

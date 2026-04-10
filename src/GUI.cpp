@@ -18,10 +18,10 @@ constexpr std::array<const char *, 10> intervalStrings{"1 min", "2 min", "5 min"
 namespace LocalSettings {
 i32 PrintTextPaddingVertical = 5;
 i32 PrintTextPaddingHorizontal = 5;
-enum struct PrintTextPositions { Top_Left,
-								 Top_Right,
-								 Bottom_Left,
-								 Bottom_Right };
+enum struct PrintTextPositions : i8 { Top_Left,
+									  Top_Right,
+									  Bottom_Left,
+									  Bottom_Right };
 PrintTextPositions PrintTextPosition{PrintTextPositions::Top_Right};
 }; // namespace LocalSettings
 
@@ -396,7 +396,7 @@ auto GUI::InitRenderer() -> void {
 
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
 	ImGuiStyle &style = ImGui::GetStyle();
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+	if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
 		style.WindowRounding = 0.0F;
 		style.Colors[ImGuiCol_WindowBg].w = 1.0F;
 	}
@@ -472,7 +472,7 @@ auto GUI::EndFrame() -> void {
 	// Update and Render additional Platform Windows
 	// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
 	//  For this specific demo app we could also call SDL_GL_MakeCurrent(window, mGLContext) directly)
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+	if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
 		SDL_Window *backup_current_window = SDL_GL_GetCurrentWindow();
 		SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
 		ImGui::UpdatePlatformWindows();

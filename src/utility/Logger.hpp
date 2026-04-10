@@ -1,13 +1,14 @@
 #pragma once
 
+#include <iomanip>
 #include <memory>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-typedef std::shared_ptr<spdlog::logger> LogPtr;
+using LogPtr = std::shared_ptr<spdlog::logger>;
 
-inline LogPtr GetLogger(const std::string &name, spdlog::level::level_enum level = spdlog::level::info) {
+inline auto GetLogger(const std::string &name, spdlog::level::level_enum level = spdlog::level::info) -> LogPtr {
 	auto existingLogger = spdlog::get(name);
 	if (existingLogger) {
 		return existingLogger;

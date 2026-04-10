@@ -10,27 +10,28 @@ Settings::Settings() {
 }
 
 auto Settings::GetInstance() -> Settings & {
-	if (!Instance)
+	if (Instance == nullptr) {
 		Instance->log->critical("Settings::Init() nicht vergessen.");
+	}
 	return *Instance;
 }
 
 auto Settings::Init() -> void {
-	if (Instance) {
+	if (Instance != nullptr) {
 		Instance->log->critical("Instance dürfte vorm Init nicht valid sein");
 	}
 	Instance = new Settings();
 
 	Instance->log = GetLogger("SET");
 
-	Instance->LoadFromFile();
+	Settings::LoadFromFile();
 
 	Instance->mLastAutosave = std::chrono::steady_clock::now();
 }
 
 auto Settings::Shutdown() -> void {
 	SaveToFile();
-	if (Instance) {
+	if (Instance != nullptr) {
 		delete Instance;
 		Instance = nullptr;
 	}
@@ -42,7 +43,9 @@ auto Settings::MarkDirty() -> void {
 }
 
 auto Settings::CheckIfDirty() -> void {
-	if (mDirty) return;
+	if (mDirty) {
+		return;
+	}
 
 #define SETTING(type, name, default)      \
 	if (m##name != ShadowSettings.name) { \
@@ -64,7 +67,7 @@ auto Settings::AutoSaveIfDirty() -> void {
 
 		if (Instance->mDirty) {
 			Instance->UpdateShadowData();
-			Instance->SaveToFile();
+			Settings::SaveToFile();
 		}
 	}
 }
@@ -78,7 +81,7 @@ auto Settings::UpdateShadowData() -> void {
 Settings::~Settings() {
 }
 
-auto Settings::SaveToFile(fs::path path) -> void {
+auto Settings::SaveToFile(const fs::path &path) -> void {
 	try {
 		auto absolutePath = fs::absolute(path);
 		auto parentPath = absolutePath.parent_path();
@@ -102,7 +105,7 @@ auto Settings::SaveToFile(fs::path path) -> void {
 	}
 };
 
-auto Settings::LoadFromFile(fs::path path) -> void {
+auto Settings::LoadFromFile(const fs::path &path) -> void {
 	try {
 		auto absolutePath = fs::absolute(path);
 		if (!fs::exists(absolutePath)) {
@@ -110,7 +113,7 @@ auto Settings::LoadFromFile(fs::path path) -> void {
 
 			Instance->UpdateShadowData();
 
-			Instance->SaveToFile();
+			Settings::SaveToFile();
 			return;
 		}
 
@@ -132,7 +135,7 @@ auto Settings::LoadFromFile(fs::path path) -> void {
 		Instance->log->error("Felher beim Laden {}", e.what());
 		Instance->log->warn("Verwende Default Werte");
 
-		Instance->SaveToFile();
+		Settings::SaveToFile();
 	}
 };
 

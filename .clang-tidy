@@ -5,7 +5,6 @@ Checks:   'bugprone-*,
           -readability-identifier-length,
           -readability-uppercase-literal-suffix,
           modernize-*,
-          cppcoreguidelines-avoid-magic-numbers,
           cppcoreguidelines-interfaces,
           cppcoreguidelines-pro-type-member-init'
 WarningsAsErrors: ''

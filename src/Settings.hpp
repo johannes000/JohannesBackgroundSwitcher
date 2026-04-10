@@ -28,13 +28,13 @@
 	SETTING(i32, SettingAutoSaveIntervalInSec, 100)
 // SETTING(std::string, OutputFolder, "./CurrentWallpapers")
 
-enum class Setting {
+enum class Setting : i8 {
 #define SETTING(type, name, default) name,
 	SETTINGS_DEFINITIONS
 #undef SETTING
 };
 
-enum class WallpaperPosition : i32 {
+enum class WallpaperPosition : i8 {
 	Fit,
 	Fill,
 	Strech,
@@ -51,24 +51,23 @@ private:
 #undef SETTING
 	} ShadowSettings;
 
-private:
 	Settings();
 	~Settings();
 
-	Settings(const Settings &) = delete;
-	Settings &operator=(const Settings &) = delete;
-	Settings(Settings &&) = delete;
-	Settings &operator=(Settings &&) = delete;
-
 public:
+	Settings(const Settings &) = delete;
+	Settings(Settings &&) = delete;
+	auto operator=(const Settings &) -> Settings & = delete;
+	auto operator=(Settings &&) -> Settings & = delete;
+
 	static auto GetInstance() -> Settings &;
 	static auto Init() -> void;
 	static auto Shutdown() -> void;
 
 	static auto AutoSaveIfDirty() -> void;
 
-	static auto SaveToFile(fs::path path = "./settings.json") -> void;
-	static auto LoadFromFile(fs::path path = "./settings.json") -> void;
+	static auto SaveToFile(const fs::path &path = fs::path("./settings.json")) -> void;
+	static auto LoadFromFile(const fs::path &path = fs::path("./settings.json")) -> void;
 
 	static auto ChangeToDefault() -> void;
 
@@ -87,7 +86,6 @@ private:
 	bool mDirty = false;
 	std::chrono::steady_clock::time_point mLastAutosave;
 
-private:
 	auto MarkDirty() -> void;
 	auto CheckIfDirty() -> void;
 	auto UpdateShadowData() -> void;

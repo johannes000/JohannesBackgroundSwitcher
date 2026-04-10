@@ -62,7 +62,7 @@ auto main(int /* arg */, char ** /* args */) -> i32 {
 			}
 			u32 flags = SDL_GetWindowFlags(gui->GetWindow());
 			bool hasFocus = (flags & SDL_WINDOW_INPUT_FOCUS) != 0u;
-			bool isMinimized = (flags & SDL_WINDOW_MINIMIZED);
+			bool isMinimized = (flags & SDL_WINDOW_MINIMIZED) != 0u;
 
 			if (isMinimized) {
 				SDL_Delay(200);
